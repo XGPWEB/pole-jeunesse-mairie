@@ -12,6 +12,16 @@ Rubriques possibles dans chaque version : *Ajouté*, *Modifié*, *Corrigé*, *S�
 
 ## [À venir]
 
+## [2.14.0]
+
+### Sécurité
+
+- **Connexion par jeton retirée.** Elle n'existait que pour l'application mobile, retirée en 2.13.0. Seul le cookie de session sécurisé (`httpOnly`) permet désormais de se connecter ; un jeton présenté dans l'en-tête `Authorization: Bearer` est ignoré. Le serveur offre ainsi une porte d'entrée de moins.
+
+### Supprimé
+
+- **API de l'application mobile** : `POST /api/auth/mobile/login` et `GET /api/jeunes/[id]/fiche`. L'interface web ne les utilisait pas et ne change pas.
+
 ## [2.13.0]
 
 ### Supprimé

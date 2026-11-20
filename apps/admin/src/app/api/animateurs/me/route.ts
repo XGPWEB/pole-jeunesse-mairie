@@ -5,11 +5,10 @@ import { queryOne } from '@/lib/db';
 export const dynamic = 'force-dynamic';
 
 /**
- * Identité de la session courante (cookie web ou `Authorization: Bearer`).
+ * Identité de la session courante (cookie `pj_token`).
  *
- * Sert aussi à l'application mobile pour VALIDER un jeton stocké : 200 tant
- * que la session est valide, 401 dès qu'elle est expirée, révoquée ou que le
- * compte est suspendu. Les attributs renvoyés sont ceux de la base au moment
+ * 200 tant que la session est valide, 401 dès qu'elle est expirée, révoquée
+ * ou que le compte est suspendu. Les attributs renvoyés sont ceux de la base au moment
  * de l'appel (un changement de rôle ou d'espace y est donc visible).
  */
 export async function GET(request: NextRequest) {

@@ -9,8 +9,7 @@ import pool from '@/lib/db';
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGIN ?? 'https://jeunessenogent.cloud',
   'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-  // Authorization : l'application mobile s'authentifie par jeton Bearer.
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Headers': 'Content-Type',
 };
 
 export async function OPTIONS() {

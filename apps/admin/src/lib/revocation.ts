@@ -29,7 +29,7 @@ export const SQL_REVOQUER_SESSIONS =
   'session_version = session_version + 1, session_invalidated_at = clock_timestamp()';
 
 /**
- * Révoque toutes les sessions (web et mobile) d'un compte.
+ * Révoque toutes les sessions d'un compte.
  * Passer `client` pour l'inclure dans une transaction en cours.
  */
 export async function revoquerSessions(animateurId: string, client?: PoolClient): Promise<void> {

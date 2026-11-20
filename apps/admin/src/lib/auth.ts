@@ -87,22 +87,13 @@ export function roleEffectif(roleEnBase: string | null | undefined): 'admin' | '
 }
 
 /**
- * Extrait le jeton de session d'une requête : en-tête
- * `Authorization: Bearer <jwt>` (application mobile) ou cookie `pj_token` (web).
+ * Extrait le jeton de session d'une requête : uniquement le cookie httpOnly
+ * `pj_token`. Il n'y a plus d'application mobile : un en-tête
+ * `Authorization: Bearer` est ignoré, il n'ouvre aucune session.
  *
- * Si un en-tête Bearer est présent, il est utilisé SEUL : pas de repli sur le
- * cookie quand il est invalide, pour qu'une requête ne puisse pas être évaluée
- * tantôt avec une identité, tantôt avec une autre.
- *
- * N'utilise que l'API Web standard (Headers) : la même convention est
- * appliquée par le middleware (runtime Edge).
+ * Même règle dans le proxy (src/proxy.ts).
  */
 export function tokenDepuisRequete(request: NextRequest): string | null {
-  const autorisation = request.headers.get('authorization');
-  if (autorisation !== null) {
-    const m = /^Bearer\s+(\S+)\s*$/i.exec(autorisation);
-    return m ? m[1] : null;
-  }
   return request.cookies.get(SESSION_COOKIE)?.value ?? null;
 }
 
@@ -122,7 +113,7 @@ interface LigneSession {
 
 /**
  * LA garde de session — implémentation unique, utilisée par `requireAuth`
- * (routes API, cookie ou Bearer), `getAuthUser` (server components / server
+ * (routes API, cookie), `getAuthUser` (server components / server
  * actions) et `getSession` (lib/session.ts). Ces trois points d'entrée ne font
  * qu'extraire le jeton ; toute la décision est ici, pour qu'ils appliquent
  * exactement la même règle.
@@ -199,8 +190,7 @@ async function resoudreSession(token: string | null | undefined): Promise<JWTPay
 }
 
 /**
- * Garde des routes API (Node runtime) : cookie `pj_token` ou
- * `Authorization: Bearer`. Retourne la session avec les attributs ACTUELS du
+ * Garde des routes API (Node runtime) : cookie `pj_token`. Retourne la session avec les attributs ACTUELS du
  * compte, ou `null`.
  *
  * Elle applique aussi les rubriques du chemin demandé (même règle que le

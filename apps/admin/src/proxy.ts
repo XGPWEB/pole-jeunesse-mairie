@@ -92,15 +92,11 @@ export async function proxy(request: NextRequest) {
   const isPublic = PUBLIC_PATHS.some((p) => p.endsWith('/') ? pathname.startsWith(p) : pathMatches(pathname, p));
   if (isPublic) return NextResponse.next(requestSansEnTetesFalsifiables(request));
 
-  // Même convention que lib/auth.ts (tokenDepuisRequete) : un en-tête
-  // `Authorization: Bearer` (application mobile) est utilisé seul s'il est
-  // présent, sinon le cookie `pj_token`. Réimplémenté ici car lib/auth.ts
+  // Même règle que lib/auth.ts (tokenDepuisRequete) : seul le cookie
+  // `pj_token` ouvre une session ; un en-tête `Authorization: Bearer` est
+  // ignoré (plus d'application mobile). Réimplémenté ici car lib/auth.ts
   // dépend de `pg` et ne peut pas être chargé dans le runtime Edge.
-  const autorisation = request.headers.get('authorization');
-  const viaBearer = autorisation !== null;
-  const token = viaBearer
-    ? (/^Bearer\s+(\S+)\s*$/i.exec(autorisation)?.[1] ?? null)
-    : (request.cookies.get('pj_token')?.value ?? null);
+  const token = request.cookies.get('pj_token')?.value ?? null;
 
   const refuser = (effacerCookie: boolean) => {
     if (isApi) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
@@ -118,7 +114,7 @@ export async function proxy(request: NextRequest) {
     const result = await jwtVerify(token, JWT_SECRET, { algorithms: ['HS256'] });
     payload = result.payload as typeof payload;
   } catch {
-    return refuser(!viaBearer);
+    return refuser(true);
   }
 
   // Un billet 2FA provisoire (`type: 'totp-pending'`) — ou tout autre jeton
@@ -130,7 +126,7 @@ export async function proxy(request: NextRequest) {
   // suspension et attributs actuels (rôle, tenant) sont contrôlés en base par
   // la garde unique de lib/auth.ts, appelée par chaque route, action et layout.
   if (payload.type !== undefined && payload.type !== null) {
-    return refuser(!viaBearer);
+    return refuser(true);
   }
 
   if (pathname === '/') {

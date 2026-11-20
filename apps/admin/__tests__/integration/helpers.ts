@@ -66,22 +66,16 @@ export async function cookieFor(session: JWTPayload): Promise<string> {
   return `pj_token=${token}`;
 }
 
-/** Jeton brut, pour un en-tête `Authorization: Bearer` (application mobile). */
-export async function tokenFor(session: JWTPayload): Promise<string> {
-  return signJWT(session);
-}
-
 /**
  * Construit une NextRequest exactement comme Next le fait pour une route API
  * — même parsing du cookie `pj_token` (via req.cookies), même body JSON.
  */
 export function jsonRequest(
   url: string,
-  opts: { method?: string; cookie?: string; bearer?: string; body?: unknown; headers?: Record<string, string> } = {},
+  opts: { method?: string; cookie?: string; body?: unknown; headers?: Record<string, string> } = {},
 ): NextRequest {
   const headers = new Headers({ 'content-type': 'application/json', ...(opts.headers ?? {}) });
   if (opts.cookie) headers.set('cookie', opts.cookie);
-  if (opts.bearer) headers.set('authorization', `Bearer ${opts.bearer}`);
   return new NextRequest(new URL(url, 'http://localhost:3000'), {
     method: opts.method ?? 'GET',
     headers,

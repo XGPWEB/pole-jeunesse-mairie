@@ -22,7 +22,7 @@ import { modifierAnimateur } from '@/app/animateurs/actions';
 import { envoyerIdentifiants, envoyerReinitialisationMdp } from '@/app/animateurs/emailActions';
 import { POST as motDePasseOublie } from '@/app/api/auth/forgot-password/route';
 import { POST as confirmer } from '@/app/api/auth/reset-password/confirm/route';
-import { GET as ficheJeune } from '@/app/api/jeunes/[id]/fiche/route';
+import { GET as ficheAgora } from '@/app/api/jeunes/fiche-agora/route';
 import { GET as statistiques } from '@/app/api/stats/route';
 import { resetDb, jsonRequest } from './helpers';
 import { seedCompte, MOT_DE_PASSE } from './securite-helpers';
@@ -197,15 +197,17 @@ describe('C3 — envoi d’identifiants : destinataire et contenu fixés par le 
 });
 
 describe('C4 — les handlers appliquent eux-mêmes les rubriques (sans le proxy)', () => {
-  it('la fiche détaillée d’un jeune est refusée à un admin sans la rubrique Jeunes', async () => {
+  it('la fiche AGORA d’un jeune est refusée à un admin sans la rubrique Jeunes', async () => {
+    // (La route de fiche détaillée de l'application mobile, testée ici avant
+    // la 2.14.0, n'existe plus ; même règle sur la fiche AGORA du web.)
     const admin = await seedCompte();
     await pool.query("INSERT INTO jeunes (id, nom, prenom, tenant_id) VALUES ('revue-jeune', 'Fictif', 'Jeune', $1)", [admin.tenant_id]);
-    const cookie = await enTantQue(admin, ['activites']);
-    const refuse = await ficheJeune(jsonRequest('/api/jeunes/revue-jeune/fiche', { cookie }), { params: Promise.resolve({ id: 'revue-jeune' }) });
+    const url = '/api/jeunes/fiche-agora?id=revue-jeune';
+    const refuse = await ficheAgora(jsonRequest(url, { cookie: await enTantQue(admin, ['activites']) }));
     expect(refuse.status).toBe(401);
-    const autorise = await ficheJeune(jsonRequest('/api/jeunes/revue-jeune/fiche', { cookie: await enTantQue(admin, ['jeunes']) }),
-      { params: Promise.resolve({ id: 'revue-jeune' }) });
-    expect(autorise.status).toBe(200);
+    // Rubrique accordée : la garde laisse passer ; ce jeune n'a pas de fiche.
+    const autorise = await ficheAgora(jsonRequest(url, { cookie: await enTantQue(admin, ['jeunes']) }));
+    expect(autorise.status).toBe(404);
   });
 
   it('les statistiques sont refusées sans la rubrique Statistiques', async () => {

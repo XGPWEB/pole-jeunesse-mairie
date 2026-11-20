@@ -90,7 +90,7 @@ export async function PATCH(request: NextRequest) {
       params.push(hash);
       setClauses.push(`password_hash = $${params.length}`);
       // Révocation dans le MÊME UPDATE que le changement de hash : toutes les
-      // sessions existantes (y compris celle-ci, et les jetons mobiles) sont
+      // sessions existantes (y compris celle-ci) sont
       // invalidées de façon durable — voir lib/revocation.ts. Faite dans une
       // seconde requête, elle pouvait ne pas avoir lieu si la première
       // réussissait et la seconde échouait.
