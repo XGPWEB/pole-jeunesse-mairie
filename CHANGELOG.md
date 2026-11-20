@@ -12,6 +12,20 @@ Rubriques possibles dans chaque version : *Ajouté*, *Modifié*, *Corrigé*, *S�
 
 ## [À venir]
 
+## [2.12.4]
+
+### Sécurité
+
+- **Next.js 16.4.6.** Corrige des failles de Next.js 16.0.0 à 16.4.4 : fuite et empoisonnement de cache entre utilisateurs avec `use cache`, injection et divulgation de réponses entre clients dans une application auto-hébergée, exposition de cookies HttpOnly sur les routes Edge, contournement du refus des SVG dans l'optimisation d'images (GHSA-mfr8-8qww-v76h, GHSA-vc7v-qv4w-wrv8, GHSA-pc58-hwjq-p385, GHSA-rhh4-g77r-r9qj, GHSA-f3mh-rxg3-f5g2, GHSA-7qx7-33qx-rqx2).
+
+### Supprimé
+
+- **Données de démonstration.** Plus aucun fichier JSON de démonstration dans le dépôt ni dans le code (`lib/data.ts` ne lit plus de fichier) ; `rgpd.json` ne contient plus de demandes de droits ni de consentements.
+
+### Ajouté
+
+- **Remise à zéro de la base avant mise en service** (`scripts/remise-a-zero.sh`, simulation par défaut, sauvegarde automatique) et guide de migration vers le serveur de la mairie (`MIGRATION-SERVEUR-MAIRIE.md`).
+
 ## [2.12.3]
 
 ### Corrigé
