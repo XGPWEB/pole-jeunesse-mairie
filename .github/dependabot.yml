@@ -8,22 +8,12 @@ updates:
       interval: weekly
     open-pull-requests-limit: 5
     ignore:
-      # Versions imposées par le SDK Expo (React compris, partagé avec l'admin
-      # dans le workspace) : elles montent avec lui, pas isolément.
+      # React : montée à traiter comme un chantier (Next.js et les pages à
+      # revérifier), pas comme une mise à jour de routine.
       - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
       - dependency-name: "react-dom"
-      - dependency-name: "react-native"
-      - dependency-name: "expo*"
-      # Application mobile : pas en service (seule l'interface web est utilisée).
-      # Ses dépendances propres ne sont plus proposées ; elles seront remontées
-      # d'un bloc, avec le SDK Expo, si l'application est remise en chantier.
-      - dependency-name: "react-native-*"
-      - dependency-name: "@react-native*"
-      - dependency-name: "@react-navigation/*"
-      - dependency-name: "@expo/*"
-      # Babel n'est utilisé que par l'application mobile, où sa version est
-      # pilotée par le SDK Expo (babel-preset-expo).
-      - dependency-name: "@babel/*"
+        update-types: ["version-update:semver-major"]
       # Les types de Node suivent la version de Node réellement utilisée
       # (20 en production et en CI) : avec ceux d'une version plus récente, le
       # compilateur accepterait des API absentes à l'exécution.

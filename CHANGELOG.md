@@ -12,6 +12,16 @@ Rubriques possibles dans chaque version : *Ajouté*, *Modifié*, *Corrigé*, *S�
 
 ## [À venir]
 
+## [2.13.0]
+
+### Supprimé
+
+- **Application mobile.** Pôle Jeunesse s'utilise uniquement depuis un navigateur sur ordinateur : l'application Expo / React Native (`apps/mobile`), le paquet partagé qu'elle seule utilisait (`packages/shared`), sa configuration et ses tests sont retirés du dépôt. L'interface web ne change pas.
+
+### Sécurité
+
+- **Plus aucune alerte `npm audit`**, dépendances de développement comprises : 699 paquets en moins avec l'outillage Expo, et mise à jour de `vite` et `postcss-selector-parser`.
+
 ## [2.12.5]
 
 ### Sécurité

@@ -1,8 +1,9 @@
 # Pôle Jeunesse — Nogent-sur-Marne
 
-Application de gestion du Pôle Jeunesse de Nogent-sur-Marne : suivi des jeunes,
-des activités, des présences et des sorties, avec un tableau de bord pour
-l'administration et une interface dédiée aux animateurs.
+Application web de gestion du Pôle Jeunesse de Nogent-sur-Marne : suivi des
+jeunes, des activités, des présences et des sorties, avec un tableau de bord
+pour l'administration et une interface dédiée aux animateurs. Elle s'utilise
+depuis un navigateur sur ordinateur ; il n'y a pas d'application mobile.
 
 🌐 **Production** : [jeunessenogent.cloud](https://jeunessenogent.cloud)
 
@@ -81,14 +82,12 @@ app-pole-jeunesse/
 │   │   │   └── proxy.ts                 # Contrôle d'accès par rôle et rubrique
 │   │   ├── scripts/                     # Migrations SQL
 │   │   └── __tests__/                   # Tests vitest
-│   └── mobile/         # Application React Native / Expo
 └── deploy.sh           # Script de déploiement VPS
 ```
 
 ### Stack technique
 
 - **Web** : Next.js 16 (App Router, output `standalone`), React 19, TypeScript, Tailwind CSS
-- **Mobile** : React Native 0.81 / Expo SDK 54
 - **Base de données** : PostgreSQL 15 (driver `pg`, pool de connexions)
 - **Authentification** : JWT HS256 (`jose`) en cookie `httpOnly`, bcrypt, TOTP (`otpauth`)
 - **Emails** : `nodemailer` (SMTP)
@@ -130,7 +129,6 @@ Configurer l'environnement (voir section suivante), puis lancer :
 
 ```bash
 npm run admin      # Application web  → http://localhost:3001
-npm run mobile     # Application Expo
 ```
 
 ---
@@ -448,7 +446,7 @@ Projet privé — Ville de Nogent-sur-Marne.
 
 ## Versions et releases
 
-L'interface d'administration, l'application mobile et le paquet partagé portent **un seul numéro de version** `MAJOR.MINOR.PATCH` — même mécanisme que LE HUB.
+Le paquet racine et l'interface d'administration portent **un seul numéro de version** `MAJOR.MINOR.PATCH` — même mécanisme que LE HUB.
 
 | Incrément | Quand | Exemple |
 |---|---|---|

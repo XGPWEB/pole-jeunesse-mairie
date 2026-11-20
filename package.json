@@ -1,13 +1,11 @@
 {
   "name": "pole-jeunesse",
-  "version": "2.12.5",
+  "version": "2.13.0",
   "private": true,
   "workspaces": [
-    "apps/*",
-    "packages/*"
+    "apps/*"
   ],
   "scripts": {
-    "mobile": "npm run start --workspace=apps/mobile",
     "admin": "npm run dev --workspace=apps/admin",
     "admin:build": "npm run build --workspace=apps/admin"
   },
