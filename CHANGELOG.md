@@ -56,33 +56,33 @@ Rubriques possibles dans chaque version : *Ajouté*, *Modifié*, *Corrigé*, *S�
 
 ### Corrigé
 
-- **Agenda PIJ : pas de rendez-vous après 19:00.** L'informatrice termine sa journée à 19:00 : un rendez-vous doit désormais finir au plus tard à cette heure, à la création comme à la modification (message clair sinon), et le formulaire l'indique sous « Heure de fin ». Les rendez-vous pris dans LE HUB suivent la même limite, appliquée par LE HUB.
+- **Agenda PIJ : pas de rendez-vous après 19:00.** L'informatrice termine sa journée à 19:00 : un rendez-vous doit désormais finir au plus tard à cette heure, à la création comme à la modification (message clair sinon), et le formulaire l'indique sous « Heure de fin ». Les rendez-vous pris depuis l'application externe de réservation suivent la même limite, appliquée par celle-ci.
 
 ## [2.12.2]
 
 ### Corrigé
 
-- **Agenda PIJ : pas de pointage avant l'heure du rendez-vous.** Un rendez-vous ne peut plus être marqué « honoré » ou « absent » avant son heure de début (heure de Paris). Un rendez-vous pris dans LE HUB et pointé « honoré » à l'avance faisait valider la présence du jeune et ses XP dans LE HUB dès l'heure venue, même s'il ne venait pas. La fiche n'affiche les boutons de pointage qu'une fois le rendez-vous commencé (avec l'heure à partir de laquelle c'est possible), et le formulaire grise ces deux statuts pour un rendez-vous à venir. « Prévu » et « Annulé » restent possibles à tout moment.
+- **Agenda PIJ : pas de pointage avant l'heure du rendez-vous.** Un rendez-vous ne peut plus être marqué « honoré » ou « absent » avant son heure de début (heure de Paris). Un rendez-vous pris par un jeune dans l'application externe de réservation et pointé « honoré » à l'avance y faisait valider sa présence dès l'heure venue, même s'il ne venait pas. La fiche n'affiche les boutons de pointage qu'une fois le rendez-vous commencé (avec l'heure à partir de laquelle c'est possible), et le formulaire grise ces deux statuts pour un rendez-vous à venir. « Prévu » et « Annulé » restent possibles à tout moment.
 
 ## [2.12.1]
 
 ### Corrigé
 
-- **Agenda PIJ : un rendez-vous annulé dans LE HUB ne peut plus être pointé.** Depuis une fiche restée ouverte, on pouvait encore marquer « honoré » un rendez-vous que LE HUB venait d'annuler : il réapparaissait alors dans l'agenda. Le pointage est désormais refusé, avec un message invitant à recharger la page, et la fiche d'un tel rendez-vous indique « Annulé dans LE HUB » sans bouton de pointage.
+- **Agenda PIJ : un rendez-vous annulé depuis l'application externe de réservation ne peut plus être pointé.** Depuis une fiche restée ouverte, on pouvait encore marquer « honoré » un rendez-vous qui venait d'y être annulé : il réapparaissait alors dans l'agenda. Le pointage est désormais refusé, avec un message invitant à recharger la page, et la fiche d'un tel rendez-vous l'indique sans bouton de pointage.
 
 ## [2.12.0]
 
 ### Modifié
 
-- **Agenda PIJ : plus de rendez-vous qui se chevauchent.** Une seule informatrice reçoit : un rendez-vous qui chevauche un autre rendez-vous non annulé (y compris ceux pris dans LE HUB) est refusé, avec le créneau déjà occupé dans le message (« chevauche le rendez-vous de Léa D. (14:00 – 14:30) »). Deux rendez-vous dos à dos (14:00–14:30 puis 14:30–15:00) restent possibles, un rendez-vous annulé libère son créneau, et deux saisies simultanées sur le même créneau ne peuvent pas passer toutes les deux.
+- **Agenda PIJ : plus de rendez-vous qui se chevauchent.** Une seule informatrice reçoit : un rendez-vous qui chevauche un autre rendez-vous non annulé (y compris ceux pris depuis l'application externe de réservation) est refusé, avec le créneau déjà occupé dans le message (« chevauche le rendez-vous de Léa D. (14:00 – 14:30) »). Deux rendez-vous dos à dos (14:00–14:30 puis 14:30–15:00) restent possibles, un rendez-vous annulé libère son créneau, et deux saisies simultanées sur le même créneau ne peuvent pas passer toutes les deux.
 - **Créneaux avec heure de début et de fin.** Le formulaire demande l'heure de début et l'heure de fin (au lieu d'une durée à choisir) ; déplacer le début décale la fin en gardant la durée. Le calendrier, la liste des prochains rendez-vous et la fiche affichent le créneau complet.
 
 ## [2.11.0]
 
 ### Ajouté
 
-- **Agenda PIJ : les rendez-vous pris par les jeunes dans LE HUB y apparaissent.** L'appli LE HUB recopie chaque rendez-vous PIJ pris, déplacé ou annulé par un jeune (ou par l'équipe dans le dashboard du HUB) dans l'agenda, avec la mention « HUB » dans le calendrier et « Pris dans LE HUB » sur la fiche. Ces rendez-vous se pointent ici (« Marquer honoré », « Marquer absent ») : le pointage est reporté dans LE HUB, où il valide la présence du jeune et son XP. Leur date, leur heure et leur annulation restent gérées depuis LE HUB : ici, ils ne se modifient que pour le pointage et les notes, et ne se suppriment pas. En retour, LE HUB lit l'agenda pour ne plus proposer aux jeunes les créneaux déjà pris par l'équipe.
-- **Route de synchro `/api/pij/hub/rdv`** (lecture et écriture), réservée au serveur de LE HUB : secret partagé `HUB_SYNC_SECRET` (32 caractères au moins) et commune `HUB_SYNC_TENANT_ID`, à définir dans `/opt/pj-secrets.env`. Sans eux, la route répond 404. Elle ne renvoie ni nom complet, ni téléphone, ni notes.
+- **Agenda PIJ : synchronisation avec une application externe de réservation.** Les rendez-vous PIJ pris, déplacés ou annulés par les jeunes dans cette application apparaissent dans l'agenda, avec une mention sur la fiche. Ils se pointent ici (« Marquer honoré », « Marquer absent ») et le pointage lui est reporté ; leur date, leur heure et leur annulation restent gérées par l'application externe. En retour, elle lit l'agenda pour ne plus proposer les créneaux déjà pris par l'équipe.
+- **Route de synchro `/api/pij/hub/rdv`** (lecture et écriture), réservée au serveur de l'application externe : secret partagé `HUB_SYNC_SECRET` (32 caractères au moins) et commune `HUB_SYNC_TENANT_ID`, à définir dans `/opt/pj-secrets.env`. Sans eux, la route répond 404. Elle ne renvoie ni nom complet, ni téléphone, ni notes.
 
 ### Sécurité
 
@@ -330,7 +330,7 @@ Première version numérotée et taguée. L'interface affichait jusque-là « v2
 ### Ajouté
 
 - **Versionnement** : fichier `VERSION` comme source de vérité, `scripts/version.mjs` (`check`, `patch`, `minor`, `major`), contrôle en CI. La version et le commit du build sont affichés en pied de menu, sur l'écran de connexion, sur la page Monitoring et dans `/api/health`.
-- **Monitoring — journal de bugs** (administration › Monitoring), sur le modèle de LE HUB : répartition par type, journal chronologique, filtre 7 / 30 / 90 jours, suppression d'une entrée. Sont journalisés :
+- **Monitoring — journal de bugs** (administration › Monitoring) : répartition par type, journal chronologique, filtre 7 / 30 / 90 jours, suppression d'une entrée. Sont journalisés :
   - les erreurs du serveur (routes, actions, rendu des pages, promesses rejetées) ;
   - les erreurs du navigateur (JavaScript, page qui ne s'affiche pas, réponse 5xx d'une API, chargement de plus de 4 secondes) ;
   - les quotas de tentatives épuisés (connexion, mot de passe oublié, code de double authentification) ;

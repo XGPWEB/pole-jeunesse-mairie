@@ -1,8 +1,22 @@
-# Migration vers le serveur de la mairie — novembre 2026
+# Migration vers le serveur de la mairie
 
-Objectif : faire tourner Pôle Jeunesse sur le serveur de la mairie, **avec une
-base remise à zéro** (sans les données saisies pour la démonstration), en
-gardant le VPS actuel (`<ANCIEN_VPS>`, adresse dans deploy.env) intact jusqu'à la validation.
+Objectif : faire tourner Pôle Jeunesse (version **2.14.0** ou suivante) sur un
+serveur de la mairie, **avec une base remise à zéro** (sans les données saisies
+pour la démonstration), sous une **nouvelle adresse de la ville**, en gardant
+l'hébergement actuel intact jusqu'à la validation.
+
+Pôle Jeunesse est une **application web** utilisée depuis un navigateur sur
+ordinateur (administration et animateurs). Il n'y a pas d'application mobile.
+
+## Décisions prises
+
+| Sujet | Décision |
+|---|---|
+| Données | Base remise à zéro : on ne garde que la configuration et les comptes administrateurs |
+| Adresse | Nouvelle adresse de la ville, par exemple `polejeunesse.ville-nogentsurmarne.fr` (à confirmer avec la DSI) ; l'ancienne adresse n'est pas reprise |
+| Code | Dépôt public `XGPWEB/pole-jeunesse-mairie`, sans historique ni données de démonstration |
+| Mises à jour | `deploy.sh` lancé depuis le Mac, à travers le VPN de la mairie. Pas de déploiement automatique depuis GitHub : le dépôt étant public, aucun runner GitHub n'est installé sur le serveur |
+| Synchronisations externes de l'agenda PIJ | Désactivées (aucune variable de synchronisation sur le nouveau serveur) |
 
 ## Ce que devient chaque donnée
 
@@ -19,32 +33,51 @@ gardant le VPS actuel (`<ANCIEN_VPS>`, adresse dans deploy.env) intact jusqu'à 
 | | Statistiques et fréquentation (calculées depuis les tables ci-dessus), archives CAF |
 | | Journal d'audit, monitoring, tentatives de connexion |
 
-Le script refuse de s'exécuter s'il ne reste aucun compte admin actif. Après la
-remise à zéro, recréer les comptes de l'équipe depuis la page Équipe (chacun
-reçoit son e-mail de création). Le texte « référent » affiché sur chaque espace
-est un champ libre : le mettre à jour dans la page Espaces si besoin.
-
 La remise à zéro est faite par `scripts/remise-a-zero.sh`, qui appelle
 `apps/admin/scripts/remise-a-zero-2026-11.sql`. Sans `--confirmer`, elle ne
-fait qu'une **simulation** (affiche les comptes de lignes puis annule).
+fait qu'une **simulation** (affiche les nombres de lignes puis annule). Avec
+`--confirmer`, elle sauvegarde d'abord la base. Elle refuse de s'exécuter s'il
+ne reste aucun compte administrateur actif.
+
+Après la remise à zéro, recréer les comptes de l'équipe depuis la page Équipe
+(l'application génère identifiant et mot de passe, et propose de les envoyer par
+e-mail). Le texte « référent » de chaque espace est un champ libre, à mettre à
+jour dans la page Espaces.
 
 ---
 
-## 1. À obtenir de la DSI avant le jour J
+## 1. À obtenir de la DSI
 
-- [ ] **Système** : Ubuntu 22.04/24.04 ou Debian 12, 2 vCPU, 4 Go RAM, 40 Go disque.
-- [ ] **Accès SSH** par clé (root ou compte avec `sudo`) depuis le Mac. Envoyer la clé **publique** `<votre clé>.pub` (jamais la privée).
-- [ ] **Droit d'installer** : Node.js 24 (NodeSource), PostgreSQL 15+, Nginx, PM2, certbot.
-- [ ] **Réseau** : ports 80 et 443 ouverts depuis Internet si les animateurs doivent se connecter depuis l'extérieur de la mairie (sinon, accès interne seulement) ; sortie vers Internet autorisée (SMTP, API IDFM, Let's Encrypt, npm).
-- [ ] **Nom de domaine** : on garde `jeunessenogent.cloud` (seul l'enregistrement DNS change) ou un sous-domaine mairie (voir § 6).
-- [ ] **Certificat SSL** : Let's Encrypt possible, ou certificat fourni par la DSI.
-- [ ] **Messagerie** : SMTP de la mairie à utiliser pour les e-mails (création de compte, mot de passe oublié, alertes) ? hôte, port, identifiants.
-- [ ] **Sauvegardes** : la DSI sauvegarde-t-elle le serveur ? Sinon, prévoir où mettre la copie hors-site (aujourd'hui : NAS qui vient chercher les sauvegardes).
-- [x] **LE HUB** : connexion avec l'agenda PIJ **mise en attente** (décision du 20/11/2026), voir § 2 bis.
+Questions envoyées à la DSI ; cocher au fur et à mesure des réponses.
 
-## 2. Préparer le serveur de la mairie
+- [ ] **Système** : Ubuntu 22.04/24.04 ou Debian 12 ; 2 vCPU, 4 Go RAM, 40 Go disque au minimum ; serveur dédié ou partagé.
+- [ ] **Installation** : droit d'installer Node.js 24 (NodeSource), PostgreSQL 15+, Nginx, PM2, certbot — ou installation par la DSI.
+- [ ] **Accès SSH** par clé (root ou compte `sudo`), à travers le VPN de la mairie. Envoyer la clé **publique** (`<votre clé>.pub`), jamais la privée.
+- [ ] **Accès des utilisateurs** : depuis l'extérieur de la mairie (ports 80/443 ouverts depuis Internet) ou seulement en interne / par VPN.
+- [ ] **Sortie Internet** du serveur : mises à jour, SMTP, API Île-de-France Mobilités, Let's Encrypt, npm.
+- [ ] **Pare-feu / reverse proxy** de la mairie devant le serveur.
+- [ ] **Adresse** : sous-domaine de la ville (ex. `polejeunesse.ville-nogentsurmarne.fr`), qui gère les DNS.
+- [ ] **Certificat** : Let's Encrypt (nécessite un accès depuis Internet) ou certificat de la mairie (ex. `*.ville-nogentsurmarne.fr`).
+- [ ] **Messagerie** : SMTP de la mairie (hôte, port, compte d'envoi) pour les identifiants des animateurs, le mot de passe oublié et les alertes.
+- [ ] **Sauvegardes** : sauvegarde du serveur par la DSI ; emplacement pour une copie des sauvegardes hors du serveur.
+- [ ] **Supervision** : outil de la DSI où ajouter le contrôle `https://<adresse>/api/health`.
+- [ ] **RGPD** : information du DPO / fiche du registre des traitements (données de mineurs, renseignements sanitaires).
 
-Depuis le Mac (remplacer `MAIRIE` par `root@<ip>`) :
+## 2. À faire dans le code avant la mise en service
+
+- [ ] **Adresse configurable.** L'ancienne adresse est encore écrite en dur :
+  liens des e-mails (`apps/admin/src/app/animateurs/emailService.ts`), page
+  Équipe (`AnimateursClient.tsx`), valeurs par défaut CORS et réinitialisation de
+  mot de passe, et dans `deploy.sh` (configuration Nginx, chemin du certificat,
+  URL de supervision, adresses d'alerte). À remplacer par un réglage unique lu
+  sur le serveur (`APP_BASE_URL`), une fois l'adresse confirmée.
+- [ ] **Certificat** : adapter la partie Nginx de `deploy.sh` si la DSI fournit
+  son propre certificat au lieu de Let's Encrypt.
+- [ ] **Audit final** avant mise en service.
+
+## 3. Préparer le serveur
+
+Depuis le Mac, connecté au VPN de la mairie (remplacer `MAIRIE` par `root@<ip>`, ou le compte fourni) :
 
 ```bash
 ssh -i "$SSH_KEY" MAIRIE
@@ -59,68 +92,71 @@ npm install -g pm2
 timedatectl set-timezone Europe/Paris
 ```
 
-Base de données (mot de passe long, à générer et noter dans le coffre) :
+Base de données (mot de passe long, à générer et à noter dans le coffre) :
 
 ```bash
 sudo -u postgres createuser --pwprompt pj_admin
 sudo -u postgres createdb -O pj_admin pole_jeunesse
 ```
 
-Secrets : recopier **par SSH** `/opt/pj-secrets.env` et `/opt/pj-smtp.env` depuis le VPS actuel, puis adapter `DATABASE_URL` (nouveau mot de passe). Garder `chmod 600`. Générer un **nouveau** `JWT_SECRET` (`openssl rand -hex 48`) : tout le monde devra se reconnecter, ce qui est voulu.
+### Secrets
 
-## 2 bis. LE HUB en attente
+Créer `/opt/pj-secrets.env` **à neuf** (`chmod 600`), avec uniquement :
 
-La synchronisation de l'agenda PIJ avec LE HUB n'est **pas activée** sur le
-serveur de la mairie. Aucune modification de code n'est nécessaire : la route
-`/api/pij/hub/rdv` répond 404 tant que les deux variables suivantes sont
-absentes de `/opt/pj-secrets.env`.
+| Variable | Valeur |
+|---|---|
+| `DATABASE_URL` | `postgresql://pj_admin:<mot de passe>@localhost:5432/pole_jeunesse` |
+| `JWT_SECRET` | **nouveau** : `openssl rand -base64 48` (tout le monde devra se reconnecter, c'est voulu) |
+| `APP_BASE_URL` | `https://<adresse>` |
+| `ALLOWED_ORIGIN` | `https://<adresse>` |
+| `IDFM_API_KEY` | reprise de l'hébergement actuel |
+| `INTERNAL_MONITORING_SECRET` | nouveau : `openssl rand -hex 32` |
 
-- En recopiant `/opt/pj-secrets.env` depuis le VPS, **retirer** les lignes
-  `HUB_SYNC_SECRET=` et `HUB_SYNC_TENANT_ID=`.
-- Contrôle après déploiement : `curl -s -o /dev/null -w '%{http_code}\n' https://<domaine>/api/pij/hub/rdv` doit afficher `404`.
-- L'agenda PIJ fonctionne normalement : les RDV se saisissent dans l'application,
-  et l'abonnement iCalendar (Outlook) n'est pas concerné.
+Ne recopier **aucune autre variable** de l'ancien fichier : en particulier,
+aucune variable de synchronisation de l'agenda PIJ (la route correspondante
+répond alors 404).
 
-Pour reconnecter LE HUB plus tard :
-1. générer un nouveau secret (`openssl rand -hex 32`, 32 caractères minimum) ;
-2. l'ajouter dans `/opt/pj-secrets.env` avec `HUB_SYNC_TENANT_ID=nogent`, puis relancer `bash deploy.sh` (la configuration PM2 est régénérée à partir de ce fichier) ;
-3. donner le même secret et la nouvelle adresse (`https://<domaine>/api/pij/hub/rdv`) à LE HUB ;
-4. vérifier : la route répond `403` sans le secret ; un RDV pris dans LE HUB apparaît avec le badge « Pris dans LE HUB ».
+Créer `/opt/pj-smtp.env` (`chmod 600`) avec les paramètres SMTP de la mairie :
+`SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`,
+`MAIL_ADMIN`.
 
-## 3. Copier la base actuelle (la veille ou le jour J)
+## 4. Copier la base actuelle (la veille ou le jour J)
 
 On copie la base complète, puis on la remet à zéro **sur le serveur de la
-mairie**. Le VPS actuel n'est pas modifié : c'est le retour arrière.
+mairie** : l'hébergement actuel n'est pas modifié, c'est le retour arrière.
 
 ```bash
-# Dump sur le VPS actuel
-ssh -i "$SSH_KEY" root@<ANCIEN_VPS> 'set -a; . /opt/pj-secrets.env; set +a; pg_dump "$DATABASE_URL" | gzip > /root/pj-migration.sql.gz'
-# Transfert direct VPS → Mac → mairie (le fichier contient des données personnelles)
-scp -i "$SSH_KEY" root@<ANCIEN_VPS>:/root/pj-migration.sql.gz /tmp/
+# Dump sur l'hébergement actuel
+ssh -i "$SSH_KEY" root@<ANCIEN_SERVEUR> 'set -a; . /opt/pj-secrets.env; set +a; pg_dump "$DATABASE_URL" | gzip > /root/pj-migration.sql.gz'
+# Transfert ancien serveur → Mac → mairie (le fichier contient des données personnelles)
+scp -i "$SSH_KEY" root@<ANCIEN_SERVEUR>:/root/pj-migration.sql.gz /tmp/
 scp -i "$SSH_KEY" /tmp/pj-migration.sql.gz MAIRIE:/root/
 # Restauration sur le serveur de la mairie
 ssh -i "$SSH_KEY" MAIRIE 'set -a; . /opt/pj-secrets.env; set +a; gunzip -c /root/pj-migration.sql.gz | psql "$DATABASE_URL" -v ON_ERROR_STOP=1'
 ```
 
-Puis supprimer les copies intermédiaires : `rm /tmp/pj-migration.sql.gz` sur le Mac et `/root/pj-migration.sql.gz` sur les deux serveurs **après validation**.
+Après validation, supprimer les copies intermédiaires : `/tmp/pj-migration.sql.gz`
+sur le Mac et `/root/pj-migration.sql.gz` sur les deux serveurs.
 
-## 4. Remettre à zéro (sur le serveur de la mairie)
+## 5. Remettre à zéro (sur le serveur de la mairie)
 
 ```bash
 bash scripts/remise-a-zero.sh MAIRIE
 ```
 
-Lire la simulation : vérifier les nombres de lignes, le nombre d'animateurs et d'espaces conservés. Puis :
+Lire la simulation : nombres de lignes, comptes administrateurs conservés, nombre
+d'espaces. Puis :
 
 ```bash
 bash scripts/remise-a-zero.sh MAIRIE --confirmer
 ```
 
-Le script sauvegarde d'abord la base (`/opt/backups/pj-db/pj-avant-remise-a-zero-<date>.sql.gz`), vide les tables, met les archives CAF de côté et redémarre l'application.
+Le script sauvegarde la base (`/opt/backups/pj-db/pj-avant-remise-a-zero-<date>.sql.gz`),
+vide les tables, met les archives CAF de côté et redémarre l'application.
 
-## 5. Déployer l'application sur le nouveau serveur
+## 6. Déployer l'application
 
-Dans `deploy.env` (non versionné) :
+Dans `deploy.env` (à la racine du dépôt, non versionné) :
 
 ```
 VPS_IP=<ip du serveur mairie>
@@ -132,40 +168,50 @@ SSH_KEY=$HOME/.ssh/<votre clé>
 bash deploy.sh
 ```
 
-`deploy.sh` contrôle Node, les secrets et le schéma, lance les tests, livre la version, installe la sauvegarde nocturne (2 h) et la supervision (toutes les 5 min).
+`deploy.sh` contrôle Node, les secrets et le schéma de la base, lance les tests,
+livre la version, installe la sauvegarde nocturne (2 h) et la supervision
+(toutes les 5 min). `scripts/reinitialiser-mot-de-passe.sh` et
+`scripts/remise-a-zero.sh` lisent aussi `deploy.env`.
 
-Ensuite, le certificat (si le DNS pointe déjà vers le nouveau serveur) :
+Certificat Let's Encrypt (une fois le DNS en place, si le serveur est joignable
+depuis Internet) :
 
 ```bash
-certbot --nginx -d jeunessenogent.cloud
-bash deploy.sh   # régénère la conf Nginx HTTPS maintenant que le certificat existe
+certbot --nginx -d <adresse>
+bash deploy.sh   # régénère la configuration Nginx HTTPS
 ```
 
-⚠️ `scripts/reinitialiser-mot-de-passe.sh` vise encore l'ancienne IP en dur : à modifier après la bascule.
+## 7. Mise en service
 
-## 6. Bascule DNS
+1. La DSI fait pointer `<adresse>` vers le serveur.
+2. Vérifications ci-dessous.
+3. Création des comptes de l'équipe, envoi des identifiants.
+4. Communication de la nouvelle adresse à l'équipe. Les liens d'abonnement à
+   l'agenda PIJ (Outlook) sont à recréer par chaque utilisateur concerné.
 
-**Si on garde `jeunessenogent.cloud`** (recommandé) : baisser le TTL à 300 s la veille, puis changer l'enregistrement A vers l'IP de la mairie. Les liens des e-mails continuent de fonctionner sans modification.
+## 8. Vérifications
 
-**Si nouveau domaine** : à adapter avant la livraison —
-- `ALLOWED_ORIGIN` et `APP_BASE_URL` dans `/opt/pj-secrets.env` ;
-- liens dans `apps/admin/src/app/animateurs/emailService.ts` et `AnimateursClient.tsx` ;
-- `deploy.sh` (URL de supervision, conf Nginx, adresses d'alerte) ;
-- liens d'abonnement à l'agenda PIJ : à redonner aux animateurs.
-
-## 7. Vérifications après bascule
-
-- [ ] `https://<domaine>/api/health` répond avec la bonne version.
-- [ ] Connexion admin + 2FA ; connexion d'un animateur.
-- [ ] Tableau de bord : 0 jeune, 0 activité, statistiques à zéro ; espaces et équipe présents.
+- [ ] `https://<adresse>/api/health` répond avec la bonne version.
+- [ ] Connexion admin (+ 2FA si activée) ; connexion d'un animateur, qui ne voit que ses rubriques.
+- [ ] Tableau de bord : 0 jeune, 0 activité, statistiques à zéro ; espaces présents.
 - [ ] Créer une fiche jeune test, une inscription, un pointage, puis les supprimer.
-- [ ] E-mail « mot de passe oublié » reçu.
+- [ ] E-mail de création de compte et « mot de passe oublié » reçus, avec des liens vers la **nouvelle** adresse.
 - [ ] Le lendemain : `ls -lt /opt/backups/pj-db | head` montre la sauvegarde de 2 h.
 - [ ] Contrôle global : `ssh MAIRIE 'bash -s' < scripts/controle-serveur.sh`.
 
-## 8. Retour arrière
+## 9. Retour arrière
 
-Tant que le VPS actuel n'est pas arrêté : remettre l'enregistrement DNS sur
-`<ANCIEN_VPS>`. Garder le VPS au moins **2 semaines** après la bascule, puis
-le résilier après une dernière sauvegarde et la suppression des données
-personnelles qu'il contient.
+L'hébergement actuel reste en service, inchangé, sous son ancienne adresse :
+en cas de problème, l'équipe continue à l'utiliser le temps de corriger. Le
+garder au moins **2 semaines** après la mise en service, puis le résilier après
+une dernière sauvegarde et la suppression des données personnelles qu'il
+contient.
+
+## Essayer en local
+
+```bash
+cd apps/admin && npx next dev --hostname 127.0.0.1 --port 3001
+```
+
+Avec une base PostgreSQL locale et `apps/admin/.env.local` (`DATABASE_URL`,
+`JWT_SECRET`, `TZ=Europe/Paris`). Voir le README, section « Installation locale ».

@@ -446,7 +446,7 @@ Projet privé — Ville de Nogent-sur-Marne.
 
 ## Versions et releases
 
-Le paquet racine et l'interface d'administration portent **un seul numéro de version** `MAJOR.MINOR.PATCH` — même mécanisme que LE HUB.
+Le paquet racine et l'interface d'administration portent **un seul numéro de version** `MAJOR.MINOR.PATCH`.
 
 | Incrément | Quand | Exemple |
 |---|---|---|
@@ -486,6 +486,5 @@ Page **Monitoring** de l'administration (réservée aux administrateurs de la co
 
 - Point d'entrée unique : `logMonitoringEvent()` dans `apps/admin/src/lib/monitoring.ts`. Il ne lève jamais : un journal en panne ne casse pas la requête qui signale.
 - Les erreurs serveur sont captées par `apps/admin/src/instrumentation.ts`. Convention à respecter dans tout nouveau `catch` : `console.error('[api/ma-route]', err)` — c'est cette étiquette entre crochets qui fait de la trace un événement.
-- Synchro de l'agenda PIJ avec LE HUB : définir `HUB_SYNC_SECRET` (32 caractères au moins, le même que `PIJ_SYNC_SECRET` côté LE HUB) et `HUB_SYNC_TENANT_ID` (commune concernée) dans `/opt/pj-secrets.env`. Sans eux, `/api/pij/hub/rdv` répond 404.
 - Scripts du serveur : définir `INTERNAL_MONITORING_SECRET` (32 caractères au moins) dans `/opt/pj-secrets.env` pour que la sauvegarde et le contrôle de la copie NAS signalent leurs échecs au journal. Sans ce secret, la route interne répond 404 et seuls les courriels existants partent.
 - La surveillance de disponibilité reste celle du serveur (`check-health.sh` toutes les 5 minutes) : une application arrêtée ne peut pas écrire dans son propre journal.
