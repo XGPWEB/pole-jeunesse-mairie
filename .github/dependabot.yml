@@ -1,0 +1,46 @@
+# Surveillance des dépendances (constat 1 de l'audit du 2026-10-06 : Next.js
+# était resté sur une ligne non maintenue et affectée par un avis connu).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    ignore:
+      # Versions imposées par le SDK Expo (React compris, partagé avec l'admin
+      # dans le workspace) : elles montent avec lui, pas isolément.
+      - dependency-name: "react"
+      - dependency-name: "react-dom"
+      - dependency-name: "react-native"
+      - dependency-name: "expo*"
+      # Application mobile : pas en service (seule l'interface web est utilisée).
+      # Ses dépendances propres ne sont plus proposées ; elles seront remontées
+      # d'un bloc, avec le SDK Expo, si l'application est remise en chantier.
+      - dependency-name: "react-native-*"
+      - dependency-name: "@react-native*"
+      - dependency-name: "@react-navigation/*"
+      - dependency-name: "@expo/*"
+      # Babel n'est utilisé que par l'application mobile, où sa version est
+      # pilotée par le SDK Expo (babel-preset-expo).
+      - dependency-name: "@babel/*"
+      # Les types de Node suivent la version de Node réellement utilisée
+      # (20 en production et en CI) : avec ceux d'une version plus récente, le
+      # compilateur accepterait des API absentes à l'exécution.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+      # Changement majeur d'outillage : à traiter comme un chantier, pas comme
+      # une mise à jour de routine.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      # Tailwind 4 change l'extension PostCSS et le format de configuration :
+      # le build casse tel quel (PR #25, 2026-10-07) et chaque page est à
+      # revérifier visuellement.
+      - dependency-name: "tailwindcss"
+        update-types: ["version-update:semver-major"]
+    # Ces règles n'empêchent pas les mises à jour de SÉCURITÉ, que Dependabot
+    # propose indépendamment des versions ignorées ici.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly

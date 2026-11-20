@@ -1,0 +1,209 @@
+{
+  "cadreJuridique": {
+    "textes": [
+      {
+        "ref": "RGPD UE 2016/679",
+        "desc": "Règlement Général sur la Protection des Données"
+      },
+      {
+        "ref": "Loi n°78-17 du 6 janv. 1978",
+        "desc": "Loi Informatique et Libertés (modifiée)"
+      },
+      {
+        "ref": "Art. L.2312-1 CGCT",
+        "desc": "Code Général des Collectivités Territoriales"
+      },
+      {
+        "ref": "Art. 45 Loi I&L",
+        "desc": "Âge du consentement numérique : 15 ans en France"
+      },
+      {
+        "ref": "Code du patrimoine",
+        "desc": "Durées de conservation des archives publiques"
+      }
+    ],
+    "ageMajoriteNumerique": 15,
+    "autoriteSurveillance": {
+      "nom": "Commission Nationale de l'Informatique et des Libertés (CNIL)",
+      "site": "https://www.cnil.fr",
+      "telephone": "01 53 73 22 22",
+      "adresse": "3 Place de Fontenoy — TSA 80715 — 75334 PARIS CEDEX 07"
+    }
+  },
+  "registreTraitements": [
+    {
+      "id": "t1",
+      "nom": "Gestion des inscriptions aux activités",
+      "finalite": "Inscription et suivi des jeunes aux activités du Pôle Jeunesse",
+      "baseJuridique": "Mission de service public",
+      "referenceRgpd": "Art. 6.1.e RGPD",
+      "referenceLoi": "Art. L.2312-1 CGCT",
+      "categoriesDonnees": [
+        "Identité",
+        "Coordonnées",
+        "Données de santé (allergie)"
+      ],
+      "donnesSensibles": true,
+      "concerMineurs": true,
+      "destinataires": [
+        "Animateurs",
+        "Direction du Pôle Jeunesse",
+        "Mairie de Nogent"
+      ],
+      "sousTraitants": [],
+      "transfertHorsUE": false,
+      "dureeConservationActive": "3 ans après la dernière inscription",
+      "dureeArchiveIntermediaire": "2 ans (archive intermédiaire)",
+      "dureeArchiveDefinitive": "Destruction après 5 ans (référentiel CNIL collectivités)",
+      "referentielCNIL": "Référentiel CNIL — Collectivités territoriales — Fiche 12",
+      "mesuresSecurite": "Authentification par identifiant/mot de passe, chiffrement TLS, accès restreint par rôle, journalisation des accès",
+      "aipdRequise": true,
+      "aipdStatut": "réalisée",
+      "responsable": "Mairie de Nogent-sur-Marne",
+      "miseAJour": "2026-01-15"
+    },
+    {
+      "id": "t2",
+      "nom": "Gestion des présences",
+      "finalite": "Suivi des présences et sécurité des jeunes accueillis — obligation réglementaire (accueil de mineurs)",
+      "baseJuridique": "Obligation légale",
+      "referenceRgpd": "Art. 6.1.c RGPD",
+      "referenceLoi": "Art. R.227-1 et s. du Code de l'action sociale et des familles",
+      "categoriesDonnees": [
+        "Identité",
+        "Présences/absences",
+        "Coordonnées d'urgence"
+      ],
+      "donnesSensibles": false,
+      "concerMineurs": true,
+      "destinataires": [
+        "Animateurs",
+        "Direction du Pôle Jeunesse"
+      ],
+      "sousTraitants": [],
+      "transfertHorsUE": false,
+      "dureeConservationActive": "Durée de l'activité + 1 an",
+      "dureeArchiveIntermediaire": "4 ans (obligation légale)",
+      "dureeArchiveDefinitive": "Destruction après 5 ans (Code du patrimoine — art. L.212-3)",
+      "referentielCNIL": "Référentiel CNIL — Collectivités territoriales — Fiche 8",
+      "mesuresSecurite": "Accès restreint par rôle animateur, pas d'export non contrôlé",
+      "aipdRequise": true,
+      "aipdStatut": "réalisée",
+      "responsable": "Mairie de Nogent-sur-Marne",
+      "miseAJour": "2026-01-15"
+    },
+    {
+      "id": "t3",
+      "nom": "Communication et actualités",
+      "finalite": "Information des familles sur les activités, événements et actualités du Pôle Jeunesse",
+      "baseJuridique": "Consentement",
+      "referenceRgpd": "Art. 6.1.a RGPD",
+      "referenceLoi": "Art. 45 Loi I&L (consentement parental ≤ 15 ans)",
+      "categoriesDonnees": [
+        "Identité",
+        "Adresse email",
+        "Numéro de téléphone"
+      ],
+      "donnesSensibles": false,
+      "concerMineurs": true,
+      "destinataires": [
+        "Familles des jeunes inscrits"
+      ],
+      "sousTraitants": [],
+      "transfertHorsUE": false,
+      "dureeConservationActive": "Jusqu'au retrait du consentement",
+      "dureeArchiveIntermediaire": "1 an après retrait consentement",
+      "dureeArchiveDefinitive": "Destruction immédiate après archivage intermédiaire",
+      "referentielCNIL": "Lignes directrices CNIL sur le consentement — 2020",
+      "mesuresSecurite": "Opt-in explicite, mécanisme de désinscription (opt-out), traçabilité des consentements",
+      "aipdRequise": false,
+      "aipdStatut": "non requise",
+      "responsable": "Mairie de Nogent-sur-Marne",
+      "miseAJour": "2026-01-15"
+    },
+    {
+      "id": "t4",
+      "nom": "Gestion des comptes animateurs",
+      "finalite": "Authentification, gestion des droits d'accès et suivi de l'activité professionnelle",
+      "baseJuridique": "Exécution du contrat",
+      "referenceRgpd": "Art. 6.1.b RGPD",
+      "referenceLoi": "Code du travail — art. L.1221-1",
+      "categoriesDonnees": [
+        "Identité",
+        "Coordonnées professionnelles",
+        "Données RH (contrat, espace)"
+      ],
+      "donnesSensibles": false,
+      "concerMineurs": false,
+      "destinataires": [
+        "Direction du Pôle Jeunesse",
+        "Service RH — Mairie de Nogent"
+      ],
+      "sousTraitants": [],
+      "transfertHorsUE": false,
+      "dureeConservationActive": "Durée du contrat",
+      "dureeArchiveIntermediaire": "5 ans après fin de contrat",
+      "dureeArchiveDefinitive": "Destruction après 10 ans (prescriptions sociales)",
+      "referentielCNIL": "Référentiel CNIL — Gestion des ressources humaines",
+      "mesuresSecurite": "Mots de passe hachés (bcrypt), journalisation des connexions, accès par rôle",
+      "aipdRequise": false,
+      "aipdStatut": "non requise",
+      "responsable": "Mairie de Nogent-sur-Marne",
+      "miseAJour": "2026-01-15"
+    }
+  ],
+  "aipd": [
+    {
+      "id": "aipd1",
+      "traitementId": "t1",
+      "nom": "AIPD — Gestion des inscriptions (données mineurs & santé)",
+      "statut": "approuvée",
+      "dateRealisation": "2025-12-10",
+      "dateRevision": "2026-12-10",
+      "risquesIdentifies": [
+        "Accès non autorisé aux données médicales",
+        "Divulgation des informations de mineurs"
+      ],
+      "mesuresRetenues": [
+        "Authentification forte",
+        "Chiffrement des données de santé",
+        "Accès restreint animateurs référents uniquement"
+      ],
+      "avisConsultatifCNIL": false,
+      "responsableAIPD": "DPO — Mairie de Nogent-sur-Marne"
+    },
+    {
+      "id": "aipd2",
+      "traitementId": "t2",
+      "nom": "AIPD — Gestion des présences (mineurs)",
+      "statut": "approuvée",
+      "dateRealisation": "2025-12-10",
+      "dateRevision": "2026-12-10",
+      "risquesIdentifies": [
+        "Traçage des habitudes des mineurs",
+        "Accès non autorisé au registre de présences"
+      ],
+      "mesuresRetenues": [
+        "Accès restreint par rôle",
+        "Journalisation des consultations",
+        "Pas d'export automatique"
+      ],
+      "avisConsultatifCNIL": false,
+      "responsableAIPD": "DPO — Mairie de Nogent-sur-Marne"
+    }
+  ],
+  "violationsDonnees": [],
+  "demandesDroits": [],
+  "consentements": [],
+  "dpo": {
+    "nom": "Service Juridique — Mairie de Nogent-sur-Marne",
+    "email": "dpo@ville-nogentsurmarne.fr",
+    "telephone": "01 48 72 73 00",
+    "adresse": "68 rue de Plaisance, 94130 Nogent-sur-Marne",
+    "dateDesignation": "2018-05-25",
+    "declareCNIL": true,
+    "numeroCNIL": "DPO-94-0042",
+    "obligatoire": true,
+    "fondementObligation": "Art. 37 RGPD — Collectivité territoriale (autorité publique)"
+  }
+}

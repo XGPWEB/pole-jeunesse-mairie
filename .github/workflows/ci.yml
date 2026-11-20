@@ -1,0 +1,249 @@
+name: CI
+
+# Sans ce fichier, aucune suite de tests n'est jamais exécutée automatiquement.
+# Trois jobs indépendants : admin (types, unitaires, intégration PostgreSQL,
+# build, E2E locaux), mobile (types, unitaires) et garde-fous de déploiement.
+#
+# Rien ici ne touche la production : la base est un service PostgreSQL éphémère
+# du runner, les E2E lancent leur propre serveur sur 127.0.0.1 et
+# playwright.config.ts refuse toute URL non locale.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  admin:
+    name: Admin — types, tests, build, E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    defaults:
+      run:
+        working-directory: apps/admin
+
+    env:
+      # Identifiants du service PostgreSQL ÉPHÉMÈRE ci-dessus (aucune valeur réelle).
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/pole_jeunesse_test
+      E2E_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/pole_jeunesse_e2e
+      NEXT_TELEMETRY_DISABLED: 1
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Installer les dépendances
+        working-directory: .
+        run: npm ci
+
+      # La garde applicative refuse un secret court ou de remplacement : on en
+      # génère un vrai, propre à cette exécution, jamais écrit dans le dépôt.
+      - name: Générer un secret JWT pour cette exécution
+        run: echo "JWT_SECRET=$(openssl rand -base64 48)" >> "$GITHUB_ENV"
+
+      - name: Contrôle des types
+        run: npm run typecheck
+
+      - name: Tests unitaires (mocks — logique pure)
+        run: npm run test
+
+      - name: Base de test jetable (init-db.sql + migrations 2026-10)
+        run: npm run test:integration:setup
+
+      - name: Tests d'intégration (vrai PostgreSQL, vrais handlers, concurrence, contrat mobile)
+        run: npm run test:integration
+
+      # Le contrôle de schéma de deploy.sh est testé ici car il lui faut un vrai
+      # PostgreSQL : schéma à jour, migration manquante, base inaccessible.
+      - name: Le déploiement s'arrête si les migrations obligatoires manquent
+        working-directory: .
+        run: bash scripts/test-check-deploy-schema.sh
+
+      # Migration des réservations et des espaces (audit 2026-10-07) rejouée sur
+      # une base contenant déjà des lignes fautives : rien n'est modifié, les
+      # contraintes restent NOT VALID, puis se valident après correction.
+      - name: Migration réservations/espaces sur des données existantes fautives
+        working-directory: .
+        run: bash scripts/test-migration-reservations-espaces.sh
+
+      # Le script de sauvegarde que deploy.sh installe sur le serveur, extrait
+      # tel quel et lancé sur une base jetable : dump, archive des données sur
+      # disque (archives CAF), pannes simulées, purge.
+      - name: Sauvegarde nocturne — base et données sur disque
+        working-directory: .
+        run: bash scripts/test-backup-db.sh
+
+      - name: Build de production
+        run: npm run build
+
+      # npm audit signale braces, micromatch et postcss (niveau « high ») : ce
+      # sont des outils de build. Ce contrôle garantit qu'ils ne partent pas en
+      # production ; s'il échoue, l'exposition documentée dans
+      # SUIVI-AUDIT-2026-10-07.md n'est plus vraie et doit être réévaluée.
+      - name: Les paquets de build signalés par npm audit ne sont pas livrés
+        run: |
+          for paquet in braces micromatch postcss tailwindcss chokidar fast-glob; do
+            if find .next/standalone -type d -path "*/node_modules/${paquet}" | grep -q .; then
+              echo "❌ ${paquet} est présent dans l'archive livrée (.next/standalone)." >&2
+              exit 1
+            fi
+          done
+          echo "✅ Aucun de ces paquets n'est dans l'archive livrée"
+
+      # Cette étape télécharge des paquets Ubuntu et le navigateur depuis des
+      # serveurs extérieurs à GitHub. Le 2026-10-07 elle s'est figée deux fois de
+      # suite, sans délai maximal : l'exécution serait restée bloquée jusqu'à
+      # six heures. Chaque tentative est maintenant bornée, et relancée deux fois.
+      - name: Installer Chromium pour Playwright
+        timeout-minutes: 15
+        run: |
+          for tentative in 1 2 3; do
+            if timeout 240 npx playwright install --with-deps chromium; then exit 0; fi
+            echo "::warning::Installation de Chromium interrompue ou figée (tentative ${tentative}/3)"
+            sleep 15
+          done
+          echo "::error::Chromium n'a pas pu être installé après 3 tentatives : serveur de paquets ou de téléchargement indisponible."
+          exit 1
+
+      - name: E2E (serveur local + base jetable pole_jeunesse_e2e)
+        run: npm run test:e2e
+
+      - name: Conserver les traces E2E en cas d'échec
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-traces
+          path: apps/admin/test-results
+          retention-days: 7
+
+  mobile:
+    name: Mobile — types et tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        working-directory: apps/mobile
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Installer les dépendances
+        working-directory: .
+        run: npm ci
+
+      - name: Contrôle des types
+        run: npm run typecheck
+
+      - name: Tests unitaires (dates Europe/Paris, pointages, client API, session)
+        run: npm run test
+
+  garde-fous:
+    name: Garde-fous de déploiement et dépendances
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      # VERSION, package.json, package-lock.json et CHANGELOG.md doivent concorder.
+      - name: Cohérence des versions
+        run: node scripts/version.mjs check
+
+      - name: Syntaxe des scripts shell
+        run: |
+          bash -n deploy.sh
+          bash -n scripts/check-deploy-secrets.sh
+          bash -n scripts/check-shell-interpolations.sh
+          bash -n scripts/check-deploy-schema.sh
+          bash -n scripts/test-check-deploy-schema.sh
+          bash -n scripts/test-migration-reservations-espaces.sh
+          bash -n scripts/deploy-release.sh
+          bash -n scripts/test-deploy-release.sh
+          bash -n scripts/mettre-a-jour-node.sh
+          bash -n scripts/test-mettre-a-jour-node.sh
+          bash -n scripts/test-restauration-sauvegarde.sh
+          bash -n scripts/controle-serveur.sh
+          bash -n scripts/test-reprise-isolee.sh
+          bash -n scripts/controle-couverture-sauvegardes.sh
+          bash -n scripts/test-backup-db.sh
+          bash -n apps/admin/scripts/setup-test-db.sh
+          bash -n apps/admin/scripts/e2e-server.sh
+
+      # `bash -n` ne voit pas ce défaut, qui ne casse qu'à l'exécution sous le
+      # Bash 3.2 de macOS (voir le script).
+      - name: Interpolations shell délimitées avant un caractère non ASCII
+        run: bash scripts/check-shell-interpolations.sh
+
+      - name: Le déploiement s'arrête si JWT_SECRET est absent, vide ou de remplacement
+        run: bash scripts/test-check-deploy-secrets.sh
+
+      # Installation sur le serveur (audit 2026-10-07, A6), rejouée ici avec de
+      # fausses versions et un faux PM2 : répertoire distinct par version,
+      # vérification santé + version + commit, retour arrière automatique et
+      # manuel, version précédente complète conservée. Ne touche aucun serveur.
+      - name: Livraison par releases et retour arrière (banc d'essai local)
+        run: bash scripts/test-deploy-release.sh
+
+      # Changement de branche de Node sur le serveur, HORS livraison
+      # (PROCEDURE-NODE.md), rejoué avec faux apt, faux node et faux PM2 :
+      # rien ne change si l'état de départ est douteux, retour automatique à la
+      # branche de départ si l'application ne répond plus. Ne touche aucun serveur.
+      - name: Changement de version de Node et retour arrière (banc d'essai local)
+        run: bash scripts/test-mettre-a-jour-node.sh
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      # Bloquant : aucune vulnérabilité critique dans les dépendances de
+      # production de l'admin (ce qui tourne sur le serveur).
+      - name: Audit des dépendances de production de l'admin (bloquant si critique)
+        run: npm audit --omit=dev --workspace=apps/admin --audit-level=critical
+
+      # Informatif : l'outillage Expo/React Native traîne des avis sans correctif
+      # hors montée de version majeure. Le rapport reste visible à chaque run.
+      - name: Rapport d'audit complet (informatif)
+        if: always()
+        continue-on-error: true
+        run: npm audit

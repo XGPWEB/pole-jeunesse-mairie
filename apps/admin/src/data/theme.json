@@ -1,0 +1,106 @@
+{
+  "couleurs": {
+    "primaire": "#6B1A6E",
+    "navy": "#1B3870",
+    "green": "#8DC63F",
+    "cyan": "#29B5E8",
+    "background": "#F5F3F8",
+    "texte": "#1A1A2E"
+  },
+  "identiteWeb": {
+    "nomPlateforme": "Pôle Jeunesse",
+    "sousTitre": "Mairie de Nogent"
+  },
+  "interfaceWeb": {
+    "rayonBordure": "medium",
+    "densiteCartes": "comfortable",
+    "ombresCartes": true,
+    "animationsActives": true,
+    "sidebarCompact": false
+  },
+  "dashboardAdmin": {
+    "messageAccueil": "",
+    "afficherStatsJeunes": true,
+    "afficherStatsActivites": true,
+    "afficherStatsPresences": true,
+    "afficherNotifications": true,
+    "afficherProchaines": true,
+    "afficherEvenements": true,
+    "afficherPointsAttention": true
+  },
+  "dashboardAnimateur": {
+    "messageAccueil": "",
+    "afficherNotifications": true,
+    "afficherProchaines": true,
+    "afficherEvenements": true,
+    "liensRapides": []
+  },
+  "navigationAnimateur": {
+    "items": [
+      { "id": "dashboard",    "label": "Tableau de bord",      "icon": "⊞",  "visible": true },
+      { "id": "jeunes",       "label": "Fiches Jeunes",         "icon": "👥", "visible": true },
+      { "id": "activites",    "label": "Activités",             "icon": "✅", "visible": true },
+      { "id": "presences",    "label": "Présences",             "icon": "📋", "visible": true },
+      { "id": "statistiques", "label": "Statistiques",          "icon": "📊", "visible": true },
+      { "id": "evenements",   "label": "Événements",            "icon": "📅", "visible": true },
+      { "id": "vehicules",    "label": "Réservation Véhicule",  "icon": "🚐", "visible": true },
+      { "id": "projets",      "label": "Espace Projet",         "icon": "📁", "visible": true },
+      { "id": "sorties",      "label": "Fiche Sortie",          "icon": "🗺️", "visible": true },
+      { "id": "profil",       "label": "Mon profil",            "icon": "⚙️", "visible": true }
+    ]
+  },
+  "identite": {
+    "nomApp": "Pôle Jeunesse",
+    "slogan": "Nogent-sur-Marne",
+    "couleurSplash": "#6B1A6E",
+    "logoTexte": "PJ",
+    "logoUrl": null
+  },
+  "espaces": {
+    "collegiens": { "couleur": "#4A90D9", "label": "Collégiens", "age": "10–14 ans", "icon": "school" },
+    "lyceens":    { "couleur": "#8B5CF6", "label": "Lycéens",    "age": "15–17 ans", "icon": "book" },
+    "pij":        { "couleur": "#F5A623", "label": "PIJ",        "age": "16–25 ans", "icon": "information-circle" },
+    "clas":       { "couleur": "#27AE60", "label": "CLAS",       "age": "10–17 ans", "icon": "library" }
+  },
+  "header": {
+    "ville": "Mairie de Nogent-sur-Marne",
+    "adresse": "68 rue de Plaisance — 94130",
+    "afficherAdresse": true,
+    "afficherBandeauTricolore": true
+  },
+  "accueil": {
+    "titreSection": "Bienvenue !",
+    "descriptionCarte": "Consultez le programme, les activités et inscrivez-vous en ligne.",
+    "titreCarte": "Jeune / Famille",
+    "sousTitreCarte": "Espace public",
+    "afficherEspaces": true,
+    "afficherContact": true,
+    "telephoneContact": "01 48 72 73 74",
+    "emailContact": "pole.jeunesse@ville-nogentsurmarne.fr"
+  },
+  "navigation": {
+    "items": [
+      { "id": "accueil",      "label": "Accueil",    "icon": "home",       "visible": true },
+      { "id": "planning",     "label": "Planning",   "icon": "calendar",   "visible": true },
+      { "id": "inscription",  "label": "S'inscrire", "icon": "person-add", "visible": true },
+      { "id": "actualites",   "label": "Actualités", "icon": "newspaper",  "visible": true },
+      { "id": "parametres",   "label": "Paramètres", "icon": "settings",   "visible": true }
+    ]
+  },
+  "notifications": {
+    "couleurBadge": "#E53E3E",
+    "afficherBadges": true,
+    "afficherSurPlanning": true,
+    "afficherSurInscriptions": true
+  },
+  "typographie": {
+    "tailleBase": "medium",
+    "famille": "system"
+  },
+  "interface": {
+    "modeCompact": false,
+    "animationsActives": true,
+    "rayonBordure": "medium",
+    "modeSombre": false
+  }
+}
