@@ -1,6 +1,6 @@
 {
   "name": "pole-jeunesse",
-  "version": "2.12.4",
+  "version": "2.12.5",
   "private": true,
   "workspaces": [
     "apps/*",
@@ -10,5 +10,8 @@
     "mobile": "npm run start --workspace=apps/mobile",
     "admin": "npm run dev --workspace=apps/admin",
     "admin:build": "npm run build --workspace=apps/admin"
+  },
+  "overrides": {
+    "postcss": "^8.5.33"
   }
 }
