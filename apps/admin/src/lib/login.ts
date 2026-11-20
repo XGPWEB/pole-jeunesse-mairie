@@ -7,9 +7,8 @@ import { normaliserRubriques } from '@/lib/rubriques';
 import { consommerTentative, reinitialiserTentatives, FENETRE_15_MIN_MS } from '@/lib/rate-limit';
 
 /**
- * Cœur de l'authentification, partagé par le login web (/api/auth/login +
- * /api/auth/verify-totp, cookie) et le login mobile (/api/auth/mobile/login,
- * Bearer). Une seule implémentation pour que les deux transports aient
+ * Cœur de l'authentification du login web (/api/auth/login +
+ * /api/auth/verify-totp, cookie). Regroupé ici pour que les deux étapes aient
  * exactement les mêmes protections : temps de réponse constant, antirejeu
  * TOTP atomique, limitation par compte, version de session.
  */

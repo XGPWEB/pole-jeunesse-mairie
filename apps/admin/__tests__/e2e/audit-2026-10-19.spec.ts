@@ -27,12 +27,12 @@ test.beforeAll(async () => {
 test.afterAll(async () => { await pool.end(); });
 
 test('une extension d’image dans un identifiant ne contourne pas les droits de rubrique', async ({ request }) => {
-  const res = await request.get(`/api/jeunes/${jeuneId}/fiche`, { headers: { Authorization: `Bearer ${token}` } });
+  const res = await request.get(`/api/jeunes/${jeuneId}/fiche`, { headers: { Cookie: `pj_token=${token}` } });
   expect(res.status()).toBe(403);
 });
 
 test('une rubrique encodée ne donne accès à aucune donnée retirée', async ({ request }) => {
-  const res = await request.get('/api/%70ij/accueils', { headers: { Authorization: `Bearer ${token}` } });
+  const res = await request.get('/api/%70ij/accueils', { headers: { Cookie: `pj_token=${token}` } });
   expect([403, 404]).toContain(res.status());
 });
 
@@ -49,9 +49,10 @@ test('une rubrique Activités permet la recherche résumée, mais pas les contac
   const jetonActivites = await new SignJWT({ id: compteId, role: 'admin', sv: 0, rubriques: ['activites'] })
     .setProtectedHeader({ alg: 'HS256' }).setIssuedAt().setExpirationTime('10m')
     .sign(new TextEncoder().encode(process.env.E2E_JWT_SECRET));
-  const headers = { Authorization: `Bearer ${jetonActivites}` };
+  const headers = { Cookie: `pj_token=${jetonActivites}` };
   expect((await request.get('/api/jeunes', { headers })).status()).toBe(200);
-  expect((await request.get(`/api/jeunes/${jeuneId}/fiche`, { headers })).status()).toBe(403);
+  // La route de fiche détaillée (application mobile) n'existe plus : 404.
+  expect([403, 404]).toContain((await request.get(`/api/jeunes/${jeuneId}/fiche`, { headers })).status());
 });
 
 test('un ancien bon de commande HTML garde le bac à sable dans la réponse HTTP réelle', async ({ request }) => {
@@ -61,7 +62,7 @@ test('un ancien bon de commande HTML garde le bac à sable dans la réponse HTTP
   const session = await new SignJWT({ id: 'e2e-admin-a', role: 'admin', sv: 0, rubriques: null })
     .setProtectedHeader({ alg: 'HS256' }).setIssuedAt().setExpirationTime('10m')
     .sign(new TextEncoder().encode(process.env.E2E_JWT_SECRET));
-  const res = await request.get(`/api/sorties/bon-commande?id=${id}`, { headers: { Authorization: `Bearer ${session}` } });
+  const res = await request.get(`/api/sorties/bon-commande?id=${id}`, { headers: { Cookie: `pj_token=${session}` } });
   expect(res.status()).toBe(200);
   expect(res.headers()['content-type']).toBe('application/octet-stream');
   expect(res.headers()['content-disposition']).toMatch(/^attachment;/);

@@ -62,25 +62,27 @@ describe('middleware — API protégée', () => {
     expect(laissePasser(res)).toBe(true);
   });
 
-  it('laisse passer une session par Authorization: Bearer (mobile)', async () => {
-    const res = await middleware(requete('/api/pointages', { bearer: await jeton({}) }));
+  it('401 pour un jeton valide présenté en Authorization: Bearer (plus d’application mobile)', async () => {
+    const valide = await jeton({});
+    for (const chemin of ['/api/pointages', '/api/jeunes', '/api/animateurs/me']) {
+      expect((await middleware(requete(chemin, { bearer: valide }))).status, chemin).toBe(401);
+    }
+    expect((await middleware(requete('/admin/dashboard', { bearer: valide }))).status).toBe(307);
+  });
+
+  it('un en-tête Bearer ne gêne pas une session par cookie : seul le cookie compte', async () => {
+    const res = await middleware(requete('/api/jeunes', { cookie: await jeton({}), bearer: 'pas.un.jwt' }));
     expect(laissePasser(res)).toBe(true);
   });
 
-  it('401 pour un billet 2FA provisoire, par cookie comme par Bearer', async () => {
+  it('401 pour un billet 2FA provisoire', async () => {
     const billet = await jeton({ type: 'totp-pending' });
     expect((await middleware(requete('/api/jeunes', { cookie: billet }))).status).toBe(401);
-    expect((await middleware(requete('/api/jeunes', { bearer: billet }))).status).toBe(401);
   });
 
   it('401 pour un jeton signé avec un autre secret', async () => {
     const faux = await jeton({}, new TextEncoder().encode('un-autre-secret-de-plus-de-32-caracteres!'));
-    expect((await middleware(requete('/api/jeunes', { bearer: faux }))).status).toBe(401);
-  });
-
-  it('un Bearer invalide n’est pas rattrapé par un cookie valide', async () => {
-    const res = await middleware(requete('/api/jeunes', { cookie: await jeton({}), bearer: 'pas.un.jwt' }));
-    expect(res.status).toBe(401);
+    expect((await middleware(requete('/api/jeunes', { cookie: faux }))).status).toBe(401);
   });
 });
 
@@ -99,7 +101,6 @@ describe('middleware — pages', () => {
     for (const chemin of ['/api/animateurs/me', '/api/pointages', '/api/notifications', '/api/parametres', '/api/jeunes']) {
       expect((await middleware(requete(chemin))).status, chemin).toBe(401);
     }
-    expect(laissePasser(await middleware(requete('/api/auth/mobile/login')))).toBe(true);
     expect(laissePasser(await middleware(requete('/api/health')))).toBe(true);
   });
 
