@@ -15,7 +15,7 @@ ordinateur (administration et animateurs). Il n'y a pas d'application mobile.
 | Données | Base remise à zéro : on ne garde que la configuration et les comptes administrateurs |
 | Adresse | Nouvelle adresse de la ville, par exemple `polejeunesse.ville-nogentsurmarne.fr` (à confirmer avec la DSI) ; l'ancienne adresse n'est pas reprise |
 | Code | Dépôt public `XGPWEB/pole-jeunesse-mairie`, sans historique ni données de démonstration |
-| Mises à jour | Aujourd'hui `deploy.sh` depuis le Mac ; à terme, déploiement depuis GitHub par un runner installé sur le serveur (si la DSI l'accepte) |
+| Mises à jour | `deploy.sh` lancé depuis le Mac, à travers le VPN de la mairie. Pas de déploiement automatique depuis GitHub : le dépôt étant public, aucun runner GitHub n'est installé sur le serveur |
 | Synchronisations externes de l'agenda PIJ | Désactivées (aucune variable de synchronisation sur le nouveau serveur) |
 
 ## Ce que devient chaque donnée
@@ -53,9 +53,8 @@ Questions envoyées à la DSI ; cocher au fur et à mesure des réponses.
 - [ ] **Système** : Ubuntu 22.04/24.04 ou Debian 12 ; 2 vCPU, 4 Go RAM, 40 Go disque au minimum ; serveur dédié ou partagé.
 - [ ] **Installation** : droit d'installer Node.js 24 (NodeSource), PostgreSQL 15+, Nginx, PM2, certbot — ou installation par la DSI.
 - [ ] **Accès SSH** par clé (root ou compte `sudo`), à travers le VPN de la mairie. Envoyer la clé **publique** (`<votre clé>.pub`), jamais la privée.
-- [ ] **Déploiement depuis GitHub** : accord pour un runner GitHub Actions sur le serveur (connexion sortante HTTPS vers github.com, aucun port entrant).
 - [ ] **Accès des utilisateurs** : depuis l'extérieur de la mairie (ports 80/443 ouverts depuis Internet) ou seulement en interne / par VPN.
-- [ ] **Sortie Internet** du serveur : mises à jour, SMTP, API Île-de-France Mobilités, Let's Encrypt, npm, GitHub.
+- [ ] **Sortie Internet** du serveur : mises à jour, SMTP, API Île-de-France Mobilités, Let's Encrypt, npm.
 - [ ] **Pare-feu / reverse proxy** de la mairie devant le serveur.
 - [ ] **Adresse** : sous-domaine de la ville (ex. `polejeunesse.ville-nogentsurmarne.fr`), qui gère les DNS.
 - [ ] **Certificat** : Let's Encrypt (nécessite un accès depuis Internet) ou certificat de la mairie (ex. `*.ville-nogentsurmarne.fr`).
@@ -74,13 +73,11 @@ Questions envoyées à la DSI ; cocher au fur et à mesure des réponses.
   sur le serveur (`APP_BASE_URL`), une fois l'adresse confirmée.
 - [ ] **Certificat** : adapter la partie Nginx de `deploy.sh` si la DSI fournit
   son propre certificat au lieu de Let's Encrypt.
-- [ ] **Déploiement GitHub** (si accepté) : workflow de déploiement et runner.
-  En attendant, `deploy.sh` depuis le Mac fonctionne à travers le VPN.
 - [ ] **Audit final** avant mise en service.
 
 ## 3. Préparer le serveur
 
-Depuis le Mac (remplacer `MAIRIE` par `root@<ip>`, ou le compte fourni) :
+Depuis le Mac, connecté au VPN de la mairie (remplacer `MAIRIE` par `root@<ip>`, ou le compte fourni) :
 
 ```bash
 ssh -i "$SSH_KEY" MAIRIE
