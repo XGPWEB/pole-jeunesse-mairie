@@ -1,6 +1,6 @@
 {
   "name": "@pole-jeunesse/mobile",
-  "version": "2.12.3",
+  "version": "2.12.4",
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
