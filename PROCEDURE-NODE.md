@@ -21,7 +21,7 @@ Le script actuel corrige ces deux défauts :
 
 Le banc d'essai reproduit désormais ces règles d'apt : rejoué sur la première version du script, il échoue sur 12 cas.
 
-Le serveur héberge aussi deux autres applications, LE HUB et squizz. Chacune a son propre démon PM2 (`/root/.pm2-lehub`, `/opt/squizz/.pm2`) et son propre Node (`/opt/node-v24.21.0-linux-x64`). Ni le script ni `pm2 update` ne les touchent : ils agissent seulement sur `/usr/bin/node` et `/root/.pm2`.
+Si le serveur héberge d'autres applications avec leur propre démon PM2 et leur propre Node, ni le script ni `pm2 update` ne les touchent : ils agissent seulement sur `/usr/bin/node` et `/root/.pm2`.
 
 ## Changer de branche (par exemple, une future Node 26)
 
