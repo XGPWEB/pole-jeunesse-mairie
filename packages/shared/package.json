@@ -1,6 +1,6 @@
 {
   "name": "@pole-jeunesse/shared",
-  "version": "2.12.4",
+  "version": "2.12.5",
   "main": "./index.ts",
   "types": "./index.ts"
 }

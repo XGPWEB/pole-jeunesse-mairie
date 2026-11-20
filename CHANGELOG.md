@@ -12,6 +12,12 @@ Rubriques possibles dans chaque version : *Ajouté*, *Modifié*, *Corrigé*, *S�
 
 ## [À venir]
 
+## [2.12.5]
+
+### Sécurité
+
+- **PostCSS 8.5.33 pour toutes les dépendances.** Une ancienne version restait utilisée au build par Tailwind et autoprefixer. Corrige une injection dans le CSS produit et des lectures de fichiers via `sourceMappingURL` (GHSA-qx2v-qp2m-jg93, GHSA-6g55-p6wh-862q, GHSA-fxqj-rqcc-2cmp, GHSA-r28c-9q8g-f849). Plus aucune alerte `npm audit` sur l'interface d'administration.
+
 ## [2.12.4]
 
 ### Sécurité
