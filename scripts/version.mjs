@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Versionnement commun de Pôle Jeunesse (admin, mobile, paquet partagé).
+// Versionnement de Pôle Jeunesse (paquet racine et interface d'administration).
 // Même mécanisme que LE HUB (scripts/version.mjs de ce dépôt-là), adapté à un
 // monorepo npm workspaces : un seul package-lock.json à la racine.
 //
@@ -23,7 +23,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 // '' = paquet racine ; les autres sont les workspaces npm.
-const APPS = ['', 'apps/admin', 'apps/mobile', 'packages/shared'];
+const APPS = ['', 'apps/admin'];
 const LOCKFILE = 'package-lock.json';
 const SEMVER = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 const VERSION_FILE = 'VERSION';

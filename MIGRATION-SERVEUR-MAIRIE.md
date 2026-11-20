@@ -35,7 +35,7 @@ fait qu'une **simulation** (affiche les comptes de lignes puis annule).
 - [ ] **Système** : Ubuntu 22.04/24.04 ou Debian 12, 2 vCPU, 4 Go RAM, 40 Go disque.
 - [ ] **Accès SSH** par clé (root ou compte avec `sudo`) depuis le Mac. Envoyer la clé **publique** `<votre clé>.pub` (jamais la privée).
 - [ ] **Droit d'installer** : Node.js 24 (NodeSource), PostgreSQL 15+, Nginx, PM2, certbot.
-- [ ] **Réseau** : ports 80 et 443 ouverts depuis Internet (l'app mobile des jeunes y accède) ; sortie vers Internet autorisée (SMTP, API IDFM, Let's Encrypt, npm).
+- [ ] **Réseau** : ports 80 et 443 ouverts depuis Internet si les animateurs doivent se connecter depuis l'extérieur de la mairie (sinon, accès interne seulement) ; sortie vers Internet autorisée (SMTP, API IDFM, Let's Encrypt, npm).
 - [ ] **Nom de domaine** : on garde `jeunessenogent.cloud` (seul l'enregistrement DNS change) ou un sous-domaine mairie (voir § 6).
 - [ ] **Certificat SSL** : Let's Encrypt possible, ou certificat fourni par la DSI.
 - [ ] **Messagerie** : SMTP de la mairie à utiliser pour les e-mails (création de compte, mot de passe oublié, alertes) ? hôte, port, identifiants.
@@ -145,10 +145,9 @@ bash deploy.sh   # régénère la conf Nginx HTTPS maintenant que le certificat 
 
 ## 6. Bascule DNS
 
-**Si on garde `jeunessenogent.cloud`** (recommandé) : baisser le TTL à 300 s la veille, puis changer l'enregistrement A vers l'IP de la mairie. L'app mobile et les e-mails continuent de fonctionner sans modification.
+**Si on garde `jeunessenogent.cloud`** (recommandé) : baisser le TTL à 300 s la veille, puis changer l'enregistrement A vers l'IP de la mairie. Les liens des e-mails continuent de fonctionner sans modification.
 
 **Si nouveau domaine** : à adapter avant la livraison —
-- `apps/mobile/eas.json` (`EXPO_PUBLIC_API_URL`) puis nouvelle build et publication de l'app ;
 - `ALLOWED_ORIGIN` et `APP_BASE_URL` dans `/opt/pj-secrets.env` ;
 - liens dans `apps/admin/src/app/animateurs/emailService.ts` et `AnimateursClient.tsx` ;
 - `deploy.sh` (URL de supervision, conf Nginx, adresses d'alerte) ;
@@ -160,7 +159,6 @@ bash deploy.sh   # régénère la conf Nginx HTTPS maintenant que le certificat 
 - [ ] Connexion admin + 2FA ; connexion d'un animateur.
 - [ ] Tableau de bord : 0 jeune, 0 activité, statistiques à zéro ; espaces et équipe présents.
 - [ ] Créer une fiche jeune test, une inscription, un pointage, puis les supprimer.
-- [ ] App mobile : connexion et planning.
 - [ ] E-mail « mot de passe oublié » reçu.
 - [ ] Le lendemain : `ls -lt /opt/backups/pj-db | head` montre la sauvegarde de 2 h.
 - [ ] Contrôle global : `ssh MAIRIE 'bash -s' < scripts/controle-serveur.sh`.

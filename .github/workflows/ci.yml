@@ -1,8 +1,8 @@
 name: CI
 
 # Sans ce fichier, aucune suite de tests n'est jamais exécutée automatiquement.
-# Trois jobs indépendants : admin (types, unitaires, intégration PostgreSQL,
-# build, E2E locaux), mobile (types, unitaires) et garde-fous de déploiement.
+# Deux jobs indépendants : admin (types, unitaires, intégration PostgreSQL,
+# build, E2E locaux) et garde-fous de déploiement.
 #
 # Rien ici ne touche la production : la base est un service PostgreSQL éphémère
 # du runner, les E2E lancent leur propre serveur sur 127.0.0.1 et
@@ -81,7 +81,7 @@ jobs:
       - name: Base de test jetable (init-db.sql + migrations 2026-10)
         run: npm run test:integration:setup
 
-      - name: Tests d'intégration (vrai PostgreSQL, vrais handlers, concurrence, contrat mobile)
+      - name: Tests d'intégration (vrai PostgreSQL, vrais handlers, concurrence)
         run: npm run test:integration
 
       # Le contrôle de schéma de deploy.sh est testé ici car il lui faut un vrai
@@ -146,33 +146,6 @@ jobs:
           name: playwright-traces
           path: apps/admin/test-results
           retention-days: 7
-
-  mobile:
-    name: Mobile — types et tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    defaults:
-      run:
-        working-directory: apps/mobile
-
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-
-      - name: Installer les dépendances
-        working-directory: .
-        run: npm ci
-
-      - name: Contrôle des types
-        run: npm run typecheck
-
-      - name: Tests unitaires (dates Europe/Paris, pointages, client API, session)
-        run: npm run test
 
   garde-fous:
     name: Garde-fous de déploiement et dépendances
@@ -241,8 +214,7 @@ jobs:
       - name: Audit des dépendances de production de l'admin (bloquant si critique)
         run: npm audit --omit=dev --workspace=apps/admin --audit-level=critical
 
-      # Informatif : l'outillage Expo/React Native traîne des avis sans correctif
-      # hors montée de version majeure. Le rapport reste visible à chaque run.
+      # Informatif : rapport complet, dépendances de développement comprises.
       - name: Rapport d'audit complet (informatif)
         if: always()
         continue-on-error: true
