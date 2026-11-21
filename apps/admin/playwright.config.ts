@@ -5,7 +5,7 @@ import { randomBytes } from 'crypto';
  * E2E — environnement LOCAL ISOLÉ uniquement.
  *
  * Cette configuration ciblait auparavant la production par défaut
- * (`E2E_BASE_URL ?? 'https://jeunessenogent.cloud'`) : un simple
+ * (`E2E_BASE_URL ?? <adresse de production>`) : un simple
  * `npx playwright test` se connectait au service réel avec un compte admin.
  * Désormais :
  *   - la cible par défaut est un serveur Next lancé par Playwright lui-même sur
@@ -67,6 +67,8 @@ export default defineConfig({
       E2E_DB_NAME,
       DATABASE_URL: databaseUrl,
       JWT_SECRET: process.env.E2E_JWT_SECRET,
+      // Adresse publique (liens des courriels) : celle du serveur de test.
+      APP_BASE_URL: baseURL,
       E2E_ADMIN_USER: process.env.E2E_ADMIN_USER,
       E2E_ADMIN_PASS: process.env.E2E_ADMIN_PASS,
       // Aucun courriel réel ne doit partir pendant les E2E.

@@ -65,12 +65,11 @@ Questions envoyées à la DSI ; cocher au fur et à mesure des réponses.
 
 ## 2. À faire dans le code avant la mise en service
 
-- [ ] **Adresse configurable.** L'ancienne adresse est encore écrite en dur :
-  liens des e-mails (`apps/admin/src/app/animateurs/emailService.ts`), page
-  Équipe (`AnimateursClient.tsx`), valeurs par défaut CORS et réinitialisation de
-  mot de passe, et dans `deploy.sh` (configuration Nginx, chemin du certificat,
-  URL de supervision, adresses d'alerte). À remplacer par un réglage unique lu
-  sur le serveur (`APP_BASE_URL`), une fois l'adresse confirmée.
+- [x] **Adresse configurable.** Plus aucune adresse écrite en dur : l'application
+  (courriels, réinitialisation de mot de passe, CORS, page Équipe) et `deploy.sh`
+  (Nginx, chemin du certificat Let's Encrypt, supervision) lisent `APP_BASE_URL`
+  dans `/opt/pj-secrets.env`. Les alertes partent vers `MAIL_ADMIN` depuis
+  `MAIL_FROM` (`/opt/pj-smtp.env`). Reste à y mettre l'adresse confirmée par la DSI.
 - [ ] **Certificat** : adapter la partie Nginx de `deploy.sh` si la DSI fournit
   son propre certificat au lieu de Let's Encrypt.
 - [ ] **Audit final** avant mise en service.
@@ -107,8 +106,7 @@ Créer `/opt/pj-secrets.env` **à neuf** (`chmod 600`), avec uniquement :
 |---|---|
 | `DATABASE_URL` | `postgresql://pj_admin:<mot de passe>@localhost:5432/pole_jeunesse` |
 | `JWT_SECRET` | **nouveau** : `openssl rand -base64 48` (tout le monde devra se reconnecter, c'est voulu) |
-| `APP_BASE_URL` | `https://<adresse>` |
-| `ALLOWED_ORIGIN` | `https://<adresse>` |
+| `APP_BASE_URL` | `https://<adresse>` — **obligatoire**, en minuscules, sans « / » final. Seule source de l'adresse : liens des courriels, configuration Nginx et certificat, supervision. `deploy.sh` refuse de déployer sans elle. |
 | `IDFM_API_KEY` | reprise de l'hébergement actuel |
 | `INTERNAL_MONITORING_SECRET` | nouveau : `openssl rand -hex 32` |
 
