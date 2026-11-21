@@ -624,6 +624,8 @@ echo ""
 #   DATABASE_URL=postgresql://<user>:<password>@localhost:5432/<base>
 #   JWT_SECRET=<chaîne aléatoire longue>
 #   APP_BASE_URL=https://<adresse du site>   (sans « / » final)
+# et, si la DSI fournit le certificat (sinon Let's Encrypt) :
+#   SSL_CERTIFICAT=/chemin/fullchain.pem  SSL_CLE=/chemin/privkey.pem
 #   IDFM_API_KEY=<clé API IDFM>
 # Second passage juste avant l'extraction et le redémarrage : le fichier a pu
 # être modifié pendant le build, et c'est la dernière étape sans effet sur le VPS.
@@ -688,8 +690,35 @@ if command -v nginx &>/dev/null; then
     echo "APP_BASE_URL invalide dans /opt/pj-secrets.env : configuration Nginx non modifiée" >&2
     exit 1
   fi
-  # Ne réécrire la config QUE si les certs SSL existent
-  if [ -f "/etc/letsencrypt/live/$DOMAINE/fullchain.pem" ]; then
+  # Certificat : celui fourni par la mairie si SSL_CERTIFICAT et SSL_CLE sont
+  # renseignés dans /opt/pj-secrets.env (chemins absolus, contrôlés par
+  # check-deploy-secrets.sh), sinon celui de Let's Encrypt pour le domaine.
+  SSL_CERTIFICAT=$(sed -n 's/^SSL_CERTIFICAT=//p' /opt/pj-secrets.env | tail -n 1 | tr -d "\"'\r")
+  SSL_CLE=$(sed -n 's/^SSL_CLE=//p' /opt/pj-secrets.env | tail -n 1 | tr -d "\"'\r")
+  if [ -n "$SSL_CERTIFICAT" ] || [ -n "$SSL_CLE" ]; then
+    for chemin in "$SSL_CERTIFICAT" "$SSL_CLE"; do
+      if ! [[ "$chemin" =~ ^/[A-Za-z0-9._/-]+$ ]] || [ ! -r "$chemin" ]; then
+        echo "SSL_CERTIFICAT / SSL_CLE invalides ou illisibles : configuration Nginx non modifiée" >&2
+        exit 1
+      fi
+    done
+    ORIGINE_CERT="certificat fourni"
+  else
+    SSL_CERTIFICAT="/etc/letsencrypt/live/$DOMAINE/fullchain.pem"
+    SSL_CLE="/etc/letsencrypt/live/$DOMAINE/privkey.pem"
+    ORIGINE_CERT="Let's Encrypt"
+  fi
+  # Options TLS de certbot si elles existent, sinon réglages équivalents.
+  if [ -f /etc/letsencrypt/options-ssl-nginx.conf ] && [ -f /etc/letsencrypt/ssl-dhparams.pem ]; then
+    MARQUE_RETIREE="__TLS_INTEGRE__"; MARQUE_GARDEE="__TLS_CERTBOT__"
+  else
+    MARQUE_RETIREE="__TLS_CERTBOT__"; MARQUE_GARDEE="__TLS_INTEGRE__"
+  fi
+  CONF=/etc/nginx/sites-available/pole-jeunesse
+  # Copie de la configuration en place : rétablie si la nouvelle est refusée par nginx -t.
+  [ -f "$CONF" ] && cp -p "$CONF" "$CONF.precedente"
+  # Ne réécrire la config QUE si le certificat existe
+  if [ -f "$SSL_CERTIFICAT" ]; then
     cat > /etc/nginx/sites-available/pole-jeunesse << 'NGINX_EOF'
 # HTTP — tout redirect vers https://__DOMAINE__ (y compris accès par IP)
 server {
@@ -703,10 +732,15 @@ server {
     listen 443 ssl http2 default_server;
     server_name _;
 
-    ssl_certificate /etc/letsencrypt/live/__DOMAINE__/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/__DOMAINE__/privkey.pem;
-    include /etc/letsencrypt/options-ssl-nginx.conf;
-    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+    ssl_certificate __CERTIFICAT__;
+    ssl_certificate_key __CLE__;
+    include /etc/letsencrypt/options-ssl-nginx.conf; # __TLS_CERTBOT__
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # __TLS_CERTBOT__
+    ssl_protocols TLSv1.2 TLSv1.3; # __TLS_INTEGRE__
+    ssl_prefer_server_ciphers off; # __TLS_INTEGRE__
+    ssl_session_cache shared:pj_ssl:10m; # __TLS_INTEGRE__
+    ssl_session_timeout 1d; # __TLS_INTEGRE__
+    ssl_session_tickets off; # __TLS_INTEGRE__
 
     return 301 https://__DOMAINE__$request_uri;
 }
@@ -716,10 +750,15 @@ server {
     listen 443 ssl http2;
     server_name __DOMAINE__ www.__DOMAINE__;
 
-    ssl_certificate /etc/letsencrypt/live/__DOMAINE__/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/__DOMAINE__/privkey.pem;
-    include /etc/letsencrypt/options-ssl-nginx.conf;
-    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+    ssl_certificate __CERTIFICAT__;
+    ssl_certificate_key __CLE__;
+    include /etc/letsencrypt/options-ssl-nginx.conf; # __TLS_CERTBOT__
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # __TLS_CERTBOT__
+    ssl_protocols TLSv1.2 TLSv1.3; # __TLS_INTEGRE__
+    ssl_prefer_server_ciphers off; # __TLS_INTEGRE__
+    ssl_session_cache shared:pj_ssl:10m; # __TLS_INTEGRE__
+    ssl_session_timeout 1d; # __TLS_INTEGRE__
+    ssl_session_tickets off; # __TLS_INTEGRE__
 
     client_max_body_size 10M;
 
@@ -773,10 +812,14 @@ server {
 NGINX_EOF
     # Le gabarit ci-dessus est entre apostrophes (aucune variable développée,
     # les $uri/$host restent pour Nginx) : on y place le domaine ensuite.
-    sed -i "s/__DOMAINE__/${DOMAINE}/g" /etc/nginx/sites-available/pole-jeunesse
-    echo "Config Nginx HTTPS appliquée pour ${DOMAINE} ✅"
+    # « | » comme séparateur : les chemins contiennent des « / » (caractères
+    # contrôlés plus haut, aucun « | » possible).
+    sed -i -e "s|__DOMAINE__|${DOMAINE}|g" -e "s|__CERTIFICAT__|${SSL_CERTIFICAT}|g" -e "s|__CLE__|${SSL_CLE}|g" \
+      -e "/# ${MARQUE_RETIREE}\$/d" -e "s| # ${MARQUE_GARDEE}\$||" "$CONF"
+    echo "Config Nginx HTTPS pour ${DOMAINE} (${ORIGINE_CERT}) ✅"
   else
-    # Pas de SSL → config HTTP basique (premier déploiement avant certbot)
+    # Pas de certificat → config HTTP basique (premier déploiement, avant certbot
+    # ou avant l'installation du certificat de la mairie)
     cat > /etc/nginx/sites-available/pole-jeunesse << 'NGINX_EOF'
 server {
     listen 80;
@@ -796,7 +839,14 @@ NGINX_EOF
 
   ln -sf /etc/nginx/sites-available/pole-jeunesse /etc/nginx/sites-enabled/pole-jeunesse
   rm -f /etc/nginx/sites-enabled/default 2>/dev/null || true
-  nginx -t && systemctl reload nginx
+  if nginx -t; then
+    systemctl reload nginx
+    rm -f "$CONF.precedente"
+  else
+    echo "nginx -t refuse la nouvelle configuration : la précédente est rétablie" >&2
+    if [ -f "$CONF.precedente" ]; then mv -f "$CONF.precedente" "$CONF"; else rm -f "$CONF"; fi
+    exit 1
+  fi
 fi
 
 # Nettoyer
