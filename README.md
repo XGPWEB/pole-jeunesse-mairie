@@ -5,7 +5,8 @@ jeunes, des activités, des présences et des sorties, avec un tableau de bord
 pour l'administration et une interface dédiée aux animateurs. Elle s'utilise
 depuis un navigateur sur ordinateur ; il n'y a pas d'application mobile.
 
-🌐 **Production** : [jeunessenogent.cloud](https://jeunessenogent.cloud)
+🌐 **Adresse** : celle du serveur de la mairie, définie par `APP_BASE_URL` dans
+`/opt/pj-secrets.env` (aucune adresse n'est écrite dans le code).
 
 > Ce dépôt repart de zéro pour la mise en service sur le serveur de la mairie
 > (novembre 2026) : sans historique, sans données de démonstration. Les

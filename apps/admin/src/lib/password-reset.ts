@@ -1,6 +1,7 @@
 import { createHash, randomBytes, randomUUID } from 'crypto';
 import pool from '@/lib/db';
 import { SQL_REVOQUER_SESSIONS } from '@/lib/revocation';
+import { adresseApplication } from '@/lib/adresse';
 
 /**
  * Réinitialisation de mot de passe par jeton à usage unique.
@@ -95,22 +96,11 @@ export async function supprimerJeton(id: string): Promise<void> {
 }
 
 /**
- * Adresse publique de l'application, pour construire le lien du courriel.
- * Volontairement issue de la configuration et JAMAIS de l'en-tête Host de la
- * requête : un Host forgé ferait partir un lien pointant vers le domaine de
- * l'attaquant, qui récupérerait le jeton au clic.
- */
-function baseUrlPublique(): string {
-  const base = process.env.APP_BASE_URL ?? process.env.ALLOWED_ORIGIN ?? 'https://jeunessenogent.cloud';
-  return base.replace(/\/+$/, '');
-}
-
-/**
  * Le jeton voyage dans le FRAGMENT de l'URL (#token=…) : le navigateur ne
  * l'envoie ni au serveur (journaux d'accès Nginx) ni dans l'en-tête Referer.
  */
 export function lienReinitialisation(jeton: string): string {
-  return `${baseUrlPublique()}/reinitialisation#token=${encodeURIComponent(jeton)}`;
+  return `${adresseApplication()}/reinitialisation#token=${encodeURIComponent(jeton)}`;
 }
 
 export type ResultatConsommation =

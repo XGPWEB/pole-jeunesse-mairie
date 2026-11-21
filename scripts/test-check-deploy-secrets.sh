@@ -10,7 +10,8 @@ TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
 PASS=0; FAIL=0
-DB='DATABASE_URL=postgresql://u:p@localhost:5432/base_de_test'
+URL='APP_BASE_URL=https://polejeunesse.exemple.test'
+DB="DATABASE_URL=postgresql://u:p@localhost:5432/base_de_test\n$URL"
 VALIDE="$(printf 'k7Qz%.0s' {1..12})-R4nd0m-9xLmP2vT"   # 64 caractères, fabriqué pour le test
 
 # expect <code attendu: 0|1> <libellé> <contenu du fichier | __ABSENT__>
@@ -42,7 +43,20 @@ expect 1 "DATABASE_URL absente"                      "JWT_SECRET=$VALIDE"
 expect 1 "dernière occurrence vide l'emporte"        "$DB\nJWT_SECRET=$VALIDE\nJWT_SECRET="
 expect 0 "secret valide"                             "$DB\nJWT_SECRET=$VALIDE"
 expect 0 "secret valide entre guillemets"            "$DB\nJWT_SECRET=\"$VALIDE\""
-expect 0 "secret valide, fins de ligne CRLF"         "$DB\r\nJWT_SECRET=$VALIDE\r"
+expect 0 "secret valide, fins de ligne CRLF"         "DATABASE_URL=postgresql://u:p@localhost:5432/b\r\n$URL\r\nJWT_SECRET=$VALIDE\r"
+
+# APP_BASE_URL : adresse publique du site (liens des e-mails, Nginx, supervision).
+J="JWT_SECRET=$VALIDE"
+D='DATABASE_URL=postgresql://u:p@localhost:5432/base_de_test'
+expect 1 "APP_BASE_URL absente"                      "$D\n$J"
+expect 1 "APP_BASE_URL vide"                         "$D\n$J\nAPP_BASE_URL="
+expect 1 "APP_BASE_URL en http"                      "$D\n$J\nAPP_BASE_URL=http://polejeunesse.exemple.test"
+expect 1 "APP_BASE_URL avec « / » final"             "$D\n$J\nAPP_BASE_URL=https://polejeunesse.exemple.test/"
+expect 1 "APP_BASE_URL avec chemin"                  "$D\n$J\nAPP_BASE_URL=https://polejeunesse.exemple.test/admin"
+expect 1 "APP_BASE_URL sans domaine"                 "$D\n$J\nAPP_BASE_URL=https://localhost"
+expect 1 "APP_BASE_URL en majuscules"                "$D\n$J\nAPP_BASE_URL=https://PoleJeunesse.exemple.test"
+expect 1 "APP_BASE_URL avec caractère d'injection"   "$D\n$J\nAPP_BASE_URL=https://a.test;rm"
+expect 0 "APP_BASE_URL valide entre guillemets"      "$D\n$J\nAPP_BASE_URL=\"https://polejeunesse.ville-nogentsurmarne.fr\""
 
 # Le message d'erreur ne doit jamais contenir la valeur refusée.
 printf '%s\nJWT_SECRET=%s\n' "$DB" "court-mais-confidentiel" > "$TMP/secrets.env"

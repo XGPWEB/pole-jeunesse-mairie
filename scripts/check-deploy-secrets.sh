@@ -8,7 +8,8 @@
 #  deploy.sh exécute ce script sur le VPS (ssh "bash -s" < ce fichier) avant le
 #  moindre transfert et avant tout redémarrage PM2. Il sort en erreur si
 #  JWT_SECRET est absent, vide, trop court ou égal à une valeur de remplacement
-#  connue : avec un secret public, n'importe qui peut forger un JWT admin.
+#  connue (avec un secret public, n'importe qui peut forger un JWT admin), ou
+#  si APP_BASE_URL (adresse publique du site) est absente ou mal formée.
 #
 #  Ce script n'affiche JAMAIS la valeur d'un secret, seulement la raison du refus.
 #  Il est volontairement autonome pour pouvoir être testé en local sur des
@@ -40,7 +41,7 @@ read_secret() {
   printf '%s' "$line"
 }
 
-[ -f "$SECRETS_FILE" ] || fail "$SECRETS_FILE introuvable. Crée-le manuellement (chmod 600) avec DATABASE_URL, JWT_SECRET et IDFM_API_KEY."
+[ -f "$SECRETS_FILE" ] || fail "$SECRETS_FILE introuvable. Crée-le manuellement (chmod 600) avec DATABASE_URL, JWT_SECRET, APP_BASE_URL et IDFM_API_KEY."
 
 DB_URL="$(read_secret DATABASE_URL)"
 [ -n "$DB_URL" ] || fail "DATABASE_URL absente ou vide dans $SECRETS_FILE."
@@ -67,4 +68,13 @@ if [ -z "$(printf '%s' "$JWT_SEC" | tr -d "${JWT_SEC:0:1}")" ]; then
   fail "JWT_SECRET est constituée d'un seul caractère répété."
 fi
 
-echo "  🔑 Fichier secrets présent, DATABASE_URL et JWT_SECRET utilisables"
+# Adresse publique du site : source unique des liens envoyés par e-mail, de la
+# configuration Nginx, du certificat et de la supervision (deploy.sh).
+# Forme stricte : https://<nom de domaine>, sans chemin ni « / » final.
+APP_URL="$(read_secret APP_BASE_URL)"
+[ -n "$APP_URL" ] || fail "APP_BASE_URL absente ou vide dans $SECRETS_FILE (ex. APP_BASE_URL=https://polejeunesse.ville-nogentsurmarne.fr)."
+if ! [[ "$APP_URL" =~ ^https://[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$ ]]; then
+  fail "APP_BASE_URL doit être de la forme https://<nom de domaine> en minuscules, sans chemin ni « / » final."
+fi
+
+echo "  🔑 Fichier secrets présent, DATABASE_URL, JWT_SECRET et APP_BASE_URL utilisables"

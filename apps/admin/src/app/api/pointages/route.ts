@@ -5,9 +5,10 @@ import type { PoolClient } from 'pg';
 import { requireAuth } from '@/lib/auth';
 import { query } from '@/lib/db';
 import pool from '@/lib/db';
+import { origineAutorisee } from '@/lib/adresse';
 
 const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGIN ?? 'https://jeunessenogent.cloud',
+  'Access-Control-Allow-Origin': origineAutorisee(),
   'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
 };

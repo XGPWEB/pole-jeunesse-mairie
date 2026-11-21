@@ -41,6 +41,15 @@ echo ""
 
 SSH_OPTS="-i $SSH_KEY -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15"
 
+# Adresse publique du site : lue sur le serveur (APP_BASE_URL de
+# /opt/pj-secrets.env), jamais écrite dans ce script. Sert aux messages
+# ci-dessous ; Nginx et la supervision la relisent eux-mêmes sur le serveur.
+# Sa validité est contrôlée par scripts/check-deploy-secrets.sh.
+lire_adresse_vps() {
+  ssh $SSH_OPTS $VPS_USER@$VPS_IP "sed -n 's/^APP_BASE_URL=//p' /opt/pj-secrets.env 2>/dev/null | tail -n 1" 2>/dev/null \
+    | tr -d "\"'\r" || true
+}
+
 # ── Retour arrière manuel : bash deploy.sh --retour-arriere ──────────────────
 # Remet en service la version précédente conservée sur le serveur, avec sa
 # configuration, sans rien construire ni transférer. À utiliser quand une
@@ -52,7 +61,7 @@ if [ "${1:-}" = "--retour-arriere" ]; then
   CODE_RETOUR=$?
   set -e
   if [ "${CODE_RETOUR}" -eq 0 ]; then
-    echo -e "${GREEN}  ✅ Version précédente en service, identité vérifiée. Contrôle : https://jeunessenogent.cloud/api/health${NC}"
+    echo -e "${GREEN}  ✅ Version précédente en service, identité vérifiée. Contrôle : $(lire_adresse_vps)/api/health${NC}"
   elif [ "${CODE_RETOUR}" -eq 1 ]; then
     echo -e "${RED}  ❌ Retour arrière NON effectué : c'est toujours la version de départ qui est en service (voir le message ci-dessus).${NC}"
   else
@@ -286,10 +295,13 @@ alerte() {
   signaler_monitoring "Sauvegarde de la base en échec" "$1"
   if command -v msmtp &>/dev/null && [ -f /etc/msmtprc ]; then
     DEST=$(grep '^MAIL_ADMIN=' /opt/pj-smtp.env 2>/dev/null | cut -d= -f2 | tr -d '"' | tr -d "'")
-    [ -z "$DEST" ] && DEST="admin@jeunessenogent.cloud"
+    EXP=$(grep -E '^(MAIL_FROM|SMTP_USER)=' /opt/pj-smtp.env 2>/dev/null | sort | head -n 1 | cut -d= -f2- | tr -d '"' | tr -d "'")
+    if [ -z "$DEST" ]; then
+      log "MAIL_ADMIN absent de /opt/pj-smtp.env : alerte non envoyée par courriel"
+    else
     {
       echo "To: $DEST"
-      echo "From: alertes@jeunessenogent.cloud"
+      echo "From: ${EXP:-$DEST}"
       echo "Subject: [ALERTE] Pole Jeunesse — sauvegarde BDD en echec"
       echo ""
       echo "La sauvegarde de la base a echoue : $1"
@@ -297,6 +309,7 @@ alerte() {
       echo ""
       echo "Les sauvegardes existantes N'ONT PAS ete purgees."
     } | msmtp "$DEST" 2>> "$LOG" || true
+    fi
   fi
   exit 1
 }
@@ -365,8 +378,14 @@ chmod +x /opt/scripts/backup-db.sh
 # ── Script de monitoring ───────────────────────────────────────────────────────
 cat > /opt/scripts/check-health.sh << 'MONITOR_SCRIPT'
 #!/bin/bash
-URL="https://jeunessenogent.cloud/api/health"
 LOG=/var/log/pj-health.log
+# Adresse publique lue à chaque passage (APP_BASE_URL de /opt/pj-secrets.env).
+BASE=$(sed -n 's/^APP_BASE_URL=//p' /opt/pj-secrets.env 2>/dev/null | tail -n 1 | tr -d "\"'\r")
+if [ -z "$BASE" ]; then
+  echo "$(date '+%Y-%m-%d %H:%M') — APP_BASE_URL absente de /opt/pj-secrets.env : contrôle impossible" >> "$LOG"
+  exit 1
+fi
+URL="${BASE}/api/health"
 COOLDOWN_FILE=/tmp/pj-alert-sent
 
 # Vérifier l'état
@@ -392,10 +411,13 @@ date +%s > "$COOLDOWN_FILE"
 # Envoyer alerte email via msmtp (si disponible)
 if command -v msmtp &>/dev/null && [ -f /etc/msmtprc ]; then
   MAIL_DEST=$(grep '^MAIL_ADMIN=' /opt/pj-smtp.env 2>/dev/null | cut -d= -f2 | tr -d '"' | tr -d "'")
-  [ -z "$MAIL_DEST" ] && MAIL_DEST="admin@jeunessenogent.cloud"
+  EXP=$(grep -E '^(MAIL_FROM|SMTP_USER)=' /opt/pj-smtp.env 2>/dev/null | sort | head -n 1 | cut -d= -f2- | tr -d '"' | tr -d "'")
+  if [ -z "$MAIL_DEST" ]; then
+    echo "$(date '+%Y-%m-%d %H:%M') — MAIL_ADMIN absent de /opt/pj-smtp.env : alerte non envoyée par courriel" >> "$LOG"
+  else
   {
     echo "To: $MAIL_DEST"
-    echo "From: alertes@jeunessenogent.cloud"
+    echo "From: ${EXP:-$MAIL_DEST}"
     echo "Subject: [ALERTE] Pôle Jeunesse — App inaccessible (HTTP $HTTP_CODE)"
     echo ""
     echo "Le serveur Pôle Jeunesse ne répond pas."
@@ -405,6 +427,7 @@ if command -v msmtp &>/dev/null && [ -f /etc/msmtprc ]; then
     echo ""
     echo "Vérifiez sur le serveur : pm2 status"
   } | msmtp "$MAIL_DEST" 2>> "$LOG" || true
+  fi
 fi
 MONITOR_SCRIPT
 chmod +x /opt/scripts/check-health.sh
@@ -454,10 +477,13 @@ fi
 
 if command -v msmtp &>/dev/null && [ -f /etc/msmtprc ]; then
   DEST=$(grep '^MAIL_ADMIN=' /opt/pj-smtp.env 2>/dev/null | cut -d= -f2 | tr -d '"' | tr -d "'")
-  [ -z "$DEST" ] && DEST='admin@jeunessenogent.cloud'
+  EXP=$(grep -E '^(MAIL_FROM|SMTP_USER)=' /opt/pj-smtp.env 2>/dev/null | sort | head -n 1 | cut -d= -f2- | tr -d '"' | tr -d "'")
+  if [ -z "$DEST" ]; then
+    log 'MAIL_ADMIN absent de /opt/pj-smtp.env : alerte non envoyée par courriel'
+  else
   {
     echo "To: $DEST"
-    echo 'From: alertes@jeunessenogent.cloud'
+    echo "From: ${EXP:-$DEST}"
     echo 'Subject: [ALERTE] Sauvegarde NAS interrompue'
     echo ''
     echo "La copie hors-site ne se fait plus : $MSG"
@@ -466,6 +492,7 @@ if command -v msmtp &>/dev/null && [ -f /etc/msmtprc ]; then
     echo 'dans la plage autorisee (hosts allow) du module rsync pj-backups.'
     echo 'Ajuster /etc/rsyncd.conf puis : systemctl restart rsync'
   } | msmtp "$DEST" 2>> "$LOG" || true
+  fi
 fi
 NAS_SCRIPT
 chmod +x /opt/scripts/check-nas-pull.sh
@@ -596,6 +623,7 @@ echo ""
 # créé manuellement sur le VPS (chmod 600) avec au minimum :
 #   DATABASE_URL=postgresql://<user>:<password>@localhost:5432/<base>
 #   JWT_SECRET=<chaîne aléatoire longue>
+#   APP_BASE_URL=https://<adresse du site>   (sans « / » final)
 #   IDFM_API_KEY=<clé API IDFM>
 # Second passage juste avant l'extraction et le redémarrage : le fichier a pu
 # être modifié pendant le build, et c'est la dernière étape sans effet sur le VPS.
@@ -652,14 +680,22 @@ pm2 startup systemd -u root --hp /root 2>/dev/null | tail -1 | bash 2>/dev/null 
 
 # Configurer Nginx — conserver la config SSL si elle existe déjà
 if command -v nginx &>/dev/null; then
+  # Domaine du site, tiré de APP_BASE_URL (déjà validée par check-deploy-secrets.sh ;
+  # revalidée ici car il est injecté dans la configuration Nginx).
+  APP_BASE_URL=$(sed -n 's/^APP_BASE_URL=//p' /opt/pj-secrets.env | tail -n 1 | tr -d "\"'\r")
+  DOMAINE="${APP_BASE_URL#https://}"
+  if ! [[ "$DOMAINE" =~ ^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$ ]]; then
+    echo "APP_BASE_URL invalide dans /opt/pj-secrets.env : configuration Nginx non modifiée" >&2
+    exit 1
+  fi
   # Ne réécrire la config QUE si les certs SSL existent
-  if [ -f /etc/letsencrypt/live/jeunessenogent.cloud/fullchain.pem ]; then
+  if [ -f "/etc/letsencrypt/live/$DOMAINE/fullchain.pem" ]; then
     cat > /etc/nginx/sites-available/pole-jeunesse << 'NGINX_EOF'
-# HTTP — tout redirect vers https://jeunessenogent.cloud (y compris accès par IP)
+# HTTP — tout redirect vers https://__DOMAINE__ (y compris accès par IP)
 server {
     listen 80 default_server;
     server_name _;
-    return 301 https://jeunessenogent.cloud$request_uri;
+    return 301 https://__DOMAINE__$request_uri;
 }
 
 # HTTPS — catch-all : redirige les accès par IP vers le domaine
@@ -667,21 +703,21 @@ server {
     listen 443 ssl http2 default_server;
     server_name _;
 
-    ssl_certificate /etc/letsencrypt/live/jeunessenogent.cloud/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/jeunessenogent.cloud/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/__DOMAINE__/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/__DOMAINE__/privkey.pem;
     include /etc/letsencrypt/options-ssl-nginx.conf;
     ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
 
-    return 301 https://jeunessenogent.cloud$request_uri;
+    return 301 https://__DOMAINE__$request_uri;
 }
 
 # HTTPS — domaine principal
 server {
     listen 443 ssl http2;
-    server_name jeunessenogent.cloud www.jeunessenogent.cloud;
+    server_name __DOMAINE__ www.__DOMAINE__;
 
-    ssl_certificate /etc/letsencrypt/live/jeunessenogent.cloud/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/jeunessenogent.cloud/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/__DOMAINE__/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/__DOMAINE__/privkey.pem;
     include /etc/letsencrypt/options-ssl-nginx.conf;
     ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
 
@@ -735,7 +771,10 @@ server {
     }
 }
 NGINX_EOF
-    echo "Config Nginx HTTPS appliquée ✅"
+    # Le gabarit ci-dessus est entre apostrophes (aucune variable développée,
+    # les $uri/$host restent pour Nginx) : on y place le domaine ensuite.
+    sed -i "s/__DOMAINE__/${DOMAINE}/g" /etc/nginx/sites-available/pole-jeunesse
+    echo "Config Nginx HTTPS appliquée pour ${DOMAINE} ✅"
   else
     # Pas de SSL → config HTTP basique (premier déploiement avant certbot)
     cat > /etc/nginx/sites-available/pole-jeunesse << 'NGINX_EOF'
@@ -774,8 +813,9 @@ echo -e "${GREEN}╔════════════════════
 echo -e "${GREEN}║   ✅ DÉPLOIEMENT TERMINÉ                     ║${NC}"
 echo -e "${GREEN}╚══════════════════════════════════════════════╝${NC}"
 echo ""
-echo -e "  🌐 Dashboard admin    : ${BLUE}https://jeunessenogent.cloud/admin${NC}"
-echo -e "  📱 URL animateurs     : ${BLUE}https://jeunessenogent.cloud/animateur${NC}"
+ADRESSE_SITE="$(lire_adresse_vps)"
+echo -e "  🌐 Dashboard admin    : ${BLUE}${ADRESSE_SITE}/admin${NC}"
+echo -e "  📱 URL animateurs     : ${BLUE}${ADRESSE_SITE}/animateur${NC}"
 echo ""
 
 # Nettoyage local

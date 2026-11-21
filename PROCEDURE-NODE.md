@@ -55,7 +55,7 @@ Pendant la relance par PM2, le site est indisponible quelques secondes.
 
 ### 3. Vérifier à la main
 
-- Ouvrir https://jeunessenogent.cloud/admin, se connecter, ouvrir une fiche jeune et la page Équipe.
+- Ouvrir `<adresse du site>/admin`, se connecter, ouvrir une fiche jeune et la page Équipe.
 - `ssh -i "$SSH_KEY" root@<SERVEUR> 'node --version; pm2 status; pm2 logs pole-jeunesse-admin --lines 30 --nostream'`
 - Le lendemain, vérifier que la sauvegarde de 2 h a bien tourné (`ls -lt /opt/backups/pj-db | head -3`) et que la page Monitoring ne signale rien.
 

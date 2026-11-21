@@ -6,9 +6,10 @@ import {
   poserCookieSession, verifierSecondFacteur,
 } from '@/lib/login';
 import { FENETRE_15_MIN_MS, consommerTentative, ipClient, reinitialiserTentatives } from '@/lib/rate-limit';
+import { origineAutorisee } from '@/lib/adresse';
 
 const CORS = {
-  'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGIN ?? 'https://jeunessenogent.cloud',
+  'Access-Control-Allow-Origin': origineAutorisee(),
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
 };

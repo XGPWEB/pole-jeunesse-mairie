@@ -315,7 +315,8 @@ function CredentialModal({ animateur, onClose }: CredentialModalProps) {
                   <span className="inline-block bg-[#1B3870] text-white font-bold text-xs px-4 py-2 rounded-lg">
                     &#x1F511; Se connecter
                   </span>
-                  <p className="text-[10px] text-[#6B1A6E] mt-1">https://jeunessenogent.cloud/</p>
+                  {/* Adresse réelle du site, celle que l'e-mail contiendra (APP_BASE_URL) */}
+                  <p className="text-[10px] text-[#6B1A6E] mt-1">{typeof window !== 'undefined' ? `${window.location.origin}/` : ''}</p>
                 </div>
               </div>
               {/* Signature */}
