@@ -119,8 +119,28 @@ fi
 DEPUIS="$(d config --get miroir.mairie.depuis || true)"
 [ -n "$DEPUIS" ] || { echo "Pas encore initialisé : bash scripts/miroir-vers-demo.sh --initialiser" >&2; exit 1; }
 
-# Déjà reporté = présent dans l'historique de la branche courante de la démo.
-deja_reporte() { [ -n "$(d log HEAD -F --grep="Miroir-de: pole-jeunesse-mairie@$1" -1 --format=%H)" ]; }
+# Raison de ne pas reporter un commit (rien si on doit le reporter).
+# $1 = sha source, $2 = branche de la démo dont l'historique fait foi.
+raison_ignore() {
+  local sha="$1" ref="$2" f utiles=0
+  if [ -n "$(d log "$ref" -F --grep="Miroir-de: pole-jeunesse-mairie@$sha" -1 --format=%H)" ]; then
+    echo "déjà fait"; return
+  fi
+  if grep -qx "$sha" <<<"$(d config --get-all miroir.mairie.ignores || true)"; then
+    echo "écarté à la main"; return
+  fi
+  if [[ "$(d log -1 --format=%s "$sha")" =~ ^chore(\(.*\))?:\ version\  ]]; then
+    echo "version"; return
+  fi
+  if grep -qiE '^Miroir:[[:space:]]*non' <<<"$(d log -1 --format=%B "$sha")"; then
+    echo "Miroir: non"; return
+  fi
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    est_exclu "$f" || utiles=1
+  done < <(d diff-tree --no-commit-id --name-only -r "$sha")
+  [ "$utiles" = 1 ] || echo "fichiers propres à la mairie"
+}
 
 ecrire_message() { # $1 = sha source → message du commit reporté sur la sortie
   d log -1 --format=%B "$1" | sed -e :a -e '/^\n*$/{$d;N;ba' -e '}'
@@ -173,12 +193,29 @@ if [ -z "$COMMITS" ]; then
 fi
 
 if [ "$MODE" != "--simulation" ] && [ "$MODE" != "--continuer" ]; then
+  # Pas de branche s'il n'y a rien à reporter depuis le main de la démo.
+  A_REPORTER=0
+  d rev-parse -q --verify refs/heads/main >/dev/null || { echo "Pas de branche main locale dans $DEMO." >&2; exit 1; }
+  for SHA in $COMMITS; do
+    [ -n "$(raison_ignore "$SHA" refs/heads/main)" ] || { A_REPORTER=1; break; }
+  done
+  if [ "$A_REPORTER" = 0 ]; then
+    echo "Rien à reporter : les nouveaux commits de $BRANCHE_SOURCE sont propres à la mairie ou déjà reportés."
+    echo "Aucune branche créée ; la démo n'a pas bougé."
+    exit 0
+  fi
   if [ -n "$(d status --porcelain --untracked-files=no)" ]; then
     echo "Le dépôt de démo a des modifications non validées : validez-les ou mettez-les de côté." >&2
     exit 1
   fi
   BRANCHE="miroir/mairie-$(date +%Y%m%d-%H%M%S)"
-  d rev-parse -q --verify refs/heads/main >/dev/null || { echo "Pas de branche main locale dans $DEMO." >&2; exit 1; }
+  N=2; BASE="$BRANCHE"
+  while d rev-parse -q --verify "refs/heads/$BRANCHE" >/dev/null; do BRANCHE="$BASE-$N"; N=$((N + 1)); done
+  NON_FUSIONNEES="$(d branch --format='%(refname:short)' --no-merged refs/heads/main --list 'miroir/*')"
+  if [ -n "$NON_FUSIONNEES" ]; then
+    echo "Note : branche(s) miroir pas encore fusionnées dans main (leurs reports seront refaits ici) :"
+    echo "$NON_FUSIONNEES" | sed 's/^/    /'
+  fi
   d switch -q -c "$BRANCHE" refs/heads/main
   echo "Branche $BRANCHE créée dans $DEMO (depuis main, $(d log -1 --format=%h HEAD))."
 fi
@@ -187,22 +224,9 @@ fi
 
 for SHA in $COMMITS; do
   COURT="$(d log -1 --format='%h %s' "$SHA")"
-  SUJET="$(d log -1 --format=%s "$SHA")"
-  if deja_reporte "$SHA"; then echo "  déjà fait $COURT"; continue; fi
-  if grep -qx "$SHA" <<<"$(d config --get-all miroir.mairie.ignores || true)"; then
-    echo "  ignoré    $COURT  (écarté à la main)"; continue
-  fi
-  if [[ "$SUJET" =~ ^chore(\(.*\))?:\ version\  ]]; then echo "  ignoré    $COURT  (version)"; continue; fi
-  MESSAGE="$(d log -1 --format=%B "$SHA")"
-  if grep -qiE '^Miroir:[[:space:]]*non' <<<"$MESSAGE"; then
-    echo "  ignoré    $COURT  (Miroir: non)"; continue
-  fi
-  UTILES=0
-  while IFS= read -r f; do
-    [ -n "$f" ] || continue
-    est_exclu "$f" || UTILES=1
-  done < <(d diff-tree --no-commit-id --name-only -r "$SHA")
-  if [ "$UTILES" = 0 ]; then echo "  ignoré    $COURT  (fichiers propres à la mairie)"; continue; fi
+  RAISON="$(raison_ignore "$SHA" HEAD)"
+  if [ "$RAISON" = "déjà fait" ]; then echo "  déjà fait $COURT"; continue; fi
+  if [ -n "$RAISON" ]; then echo "  ignoré    $COURT  ($RAISON)"; continue; fi
 
   if [ "$MODE" = "--simulation" ]; then echo "  à reporter $COURT"; continue; fi
 
