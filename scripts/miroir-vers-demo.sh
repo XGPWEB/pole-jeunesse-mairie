@@ -3,8 +3,8 @@
 #  Pôle Jeunesse — Miroir des évolutions vers l'application de démonstration
 #
 #  Reporte les évolutions du code faites ici (pole-jeunesse-mairie, branche
-#  main) dans le dépôt de démonstration (par défaut ~/app-pole-jeunesse), sur
-#  une branche à part « miroir/mairie-AAAAMMJJ-HHMMSS ». Rien n'est poussé ni
+#  main telle que sur GitHub) dans le dépôt de démonstration (par défaut
+#  ~/app-pole-jeunesse), sur une branche à part « miroir/mairie-AAAAMMJJ-HHMMSS ». Rien n'est poussé ni
 #  fusionné : vous relisez, testez, puis fusionnez vous-même dans la démo.
 #
 #  Ce qui n'est JAMAIS reporté :
@@ -95,7 +95,14 @@ if d remote get-url "$DISTANT" >/dev/null 2>&1; then
 else
   d remote add "$DISTANT" "$SOURCE"
 fi
-d fetch -q "$DISTANT" "$BRANCHE_SOURCE"
+# Source de vérité : le main de GitHub (origin), pour qu'une PR fusionnée en
+# ligne soit vue sans « git pull ». Hors ligne : main local, avec un avertissement.
+if git -C "$SOURCE" fetch -q origin "$BRANCHE_SOURCE" 2>/dev/null; then
+  d fetch -q "$DISTANT" "+refs/remotes/origin/$BRANCHE_SOURCE:$REF_SOURCE"
+else
+  echo "Attention : GitHub injoignable, lecture du main local de $SOURCE." >&2
+  d fetch -q "$DISTANT" "+refs/heads/$BRANCHE_SOURCE:$REF_SOURCE"
+fi
 
 if [ "$MODE" = "--initialiser" ]; then
   if d config --get miroir.mairie.depuis >/dev/null; then
@@ -171,7 +178,8 @@ if [ "$MODE" != "--simulation" ] && [ "$MODE" != "--continuer" ]; then
     exit 1
   fi
   BRANCHE="miroir/mairie-$(date +%Y%m%d-%H%M%S)"
-  d switch -q -c "$BRANCHE" main
+  d rev-parse -q --verify refs/heads/main >/dev/null || { echo "Pas de branche main locale dans $DEMO." >&2; exit 1; }
+  d switch -q -c "$BRANCHE" refs/heads/main
   echo "Branche $BRANCHE créée dans $DEMO (depuis main, $(d log -1 --format=%h HEAD))."
 fi
 
