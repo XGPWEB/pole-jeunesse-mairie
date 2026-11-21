@@ -78,6 +78,23 @@ bash scripts/test-check-deploy-secrets.sh
 Playwright refuse toute URL non locale ; `setup-test-db.sh` ne détruit que des
 bases `pole_jeunesse_test*` / `pole_jeunesse_e2e*` sur un serveur local.
 
+## Miroir vers l'application de démonstration
+
+Les évolutions du code se font ici, puis sont reportées dans le dépôt de démo
+`~/app-pole-jeunesse` (projet distinct, qui garde ses données et sa partie
+mobile) par `scripts/miroir-vers-demo.sh`, sur une branche `miroir/mairie-…`
+de la démo, jamais poussée ni fusionnée automatiquement.
+
+- Ne sont jamais reportés : les données (bases, `.env*`, `src/data`), les
+  commits `chore: version …`, la doc et les scripts de mise en service.
+- Une évolution propre à la mairie porte la ligne `Miroir: non` dans le
+  message de commit.
+
+```bash
+bash scripts/miroir-vers-demo.sh --simulation   # ce qui serait reporté
+bash scripts/miroir-vers-demo.sh                # report ; puis relire et fusionner dans la démo
+```
+
 ## Mise en service
 
 Migration vers le serveur de la mairie et remise à zéro des données :
