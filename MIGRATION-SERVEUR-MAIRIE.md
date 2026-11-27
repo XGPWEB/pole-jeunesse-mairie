@@ -136,7 +136,23 @@ Créer `/opt/pj-smtp.env` (`chmod 600`) avec les paramètres SMTP de la mairie :
 signature. Elle doit appartenir au domaine de la ville et être autorisée en
 envoi par le serveur SMTP de la mairie : un courriel `@ville-nogentsurmarne.fr`
 envoyé par un autre serveur (Gmail…) part en indésirables ou est refusé.
-`MAIL_ADMIN` reçoit les alertes : l'adresse professionnelle de l'administrateur.
+
+**Adresse de l'administrateur : `x.gerinette@ville-nogentsurmarne.fr`, pour tout.**
+Sur le serveur de la mairie, tout ce qui est destiné à l'administrateur part
+vers cette seule adresse :
+
+| Quoi | Réglage |
+|---|---|
+| Alertes du monitoring de l'application (erreurs serveur, 1 par type toutes les 30 min) | `MAIL_ADMIN` |
+| Alertes du serveur : site injoignable, sauvegarde manquante ou en échec, copie des sauvegardes hors serveur | `MAIL_ADMIN` (scripts installés par `deploy.sh`, envoi par msmtp) |
+| Lien « mot de passe oublié » du compte `xavier.gerinette` | e-mail de **sa fiche**, en base (voir section 7) |
+
+```bash
+MAIL_ADMIN=x.gerinette@ville-nogentsurmarne.fr
+```
+
+La démo (jeunessenogent.cloud) garde son adresse actuelle : ces réglages
+sont propres à chaque serveur et ne passent ni par GitHub ni par le miroir.
 
 ## 4. Copier la base actuelle (la veille ou le jour J)
 
@@ -222,9 +238,14 @@ demander que `/etc/ssl/pole-jeunesse` soit compris dans la sauvegarde du serveur
 ## 7. Mise en service
 
 1. La DSI fait pointer `<adresse>` vers le serveur.
-2. Vérifications ci-dessous.
-3. Création des comptes de l'équipe, envoi des identifiants.
-4. Communication de la nouvelle adresse à l'équipe. Les liens d'abonnement à
+2. **Changer l'adresse de la fiche administrateur.** La base est une copie de
+   celle de la démo : le compte `xavier.gerinette` arrive avec l'adresse de la
+   démo. Dans l'application : Administration › Administrateurs › fiche de Xavier
+   GERINETTE, e-mail = `x.gerinette@ville-nogentsurmarne.fr`, enregistrer.
+   Sans cela, le lien « mot de passe oublié » part vers l'ancienne adresse.
+3. Vérifications ci-dessous.
+4. Création des comptes de l'équipe, envoi des identifiants.
+5. Communication de la nouvelle adresse à l'équipe. Les liens d'abonnement à
    l'agenda PIJ (Outlook) sont à recréer par chaque utilisateur concerné.
 
 ## 8. Vérifications
@@ -234,6 +255,12 @@ demander que `/etc/ssl/pole-jeunesse` soit compris dans la sauvegarde du serveur
 - [ ] Tableau de bord : 0 jeune, 0 activité, statistiques à zéro ; espaces présents.
 - [ ] Créer une fiche jeune test, une inscription, un pointage, puis les supprimer.
 - [ ] E-mail de création de compte et « mot de passe oublié » reçus, avec des liens vers la **nouvelle** adresse.
+- [ ] Tout arrive sur `x.gerinette@ville-nogentsurmarne.fr` :
+  - « mot de passe oublié » depuis l'écran de connexion avec `xavier.gerinette` ;
+  - une alerte de monitoring : `ssh MAIRIE 'grep ^MAIL_ADMIN= /opt/pj-smtp.env'`
+    affiche cette adresse, puis `ssh MAIRIE 'echo test | msmtp x.gerinette@ville-nogentsurmarne.fr'`
+    (même chemin que les alertes du serveur) ;
+  - aucune adresse de la démo (`@pressweb.fr`) dans `/opt/pj-smtp.env` ni sur la fiche.
 - [ ] Le lendemain : `ls -lt /opt/backups/pj-db | head` montre la sauvegarde de 2 h.
 - [ ] Contrôle global : `ssh MAIRIE 'bash -s' < scripts/controle-serveur.sh`.
 

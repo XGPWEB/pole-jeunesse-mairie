@@ -12,6 +12,10 @@ Rubriques possibles dans chaque version : *Ajouté*, *Modifié*, *Corrigé*, *S�
 
 ## [À venir]
 
+### Modifié
+
+- Guide de migration : tout ce qui est destiné à l'administrateur (alertes du monitoring et du serveur, « mot de passe oublié ») part vers `x.gerinette@ville-nogentsurmarne.fr` ; changement de l'adresse de la fiche administrateur après la copie de la base, et vérifications correspondantes.
+
 ## [2.15.1]
 
 ### Corrigé
