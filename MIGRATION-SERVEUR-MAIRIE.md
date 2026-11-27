@@ -70,8 +70,12 @@ Questions envoyées à la DSI ; cocher au fur et à mesure des réponses.
   (Nginx, chemin du certificat Let's Encrypt, supervision) lisent `APP_BASE_URL`
   dans `/opt/pj-secrets.env`. Les alertes partent vers `MAIL_ADMIN` depuis
   `MAIL_FROM` (`/opt/pj-smtp.env`). Reste à y mettre l'adresse confirmée par la DSI.
-- [ ] **Certificat** : adapter la partie Nginx de `deploy.sh` si la DSI fournit
-  son propre certificat au lieu de Let's Encrypt.
+- [x] **Certificat** : `deploy.sh` accepte les deux cas, sans modification du
+  code. Par défaut, Let's Encrypt (`certbot`). Si la DSI fournit son certificat,
+  renseigner `SSL_CERTIFICAT` et `SSL_CLE` dans `/opt/pj-secrets.env` (voir
+  « Certificat » en section 6). Le contrôle des secrets vérifie que la clé
+  correspond au certificat et qu'il n'est pas expiré ; Nginx est rétabli dans sa
+  configuration précédente si la nouvelle est refusée.
 - [x] **Comptes** (audit du 2026-11-20) : session fermée après 10 minutes
   d'inactivité, reconnexion chaque jour, mots de passe de 12 caractères au
   minimum. Les mots de passe existants restent valables jusqu'au prochain
@@ -114,6 +118,7 @@ Créer `/opt/pj-secrets.env` **à neuf** (`chmod 600`), avec uniquement :
 |---|---|
 | `DATABASE_URL` | `postgresql://pj_admin:<mot de passe>@localhost:5432/pole_jeunesse` |
 | `JWT_SECRET` | **nouveau** : `openssl rand -base64 48` (tout le monde devra se reconnecter, c'est voulu) |
+| `SSL_CERTIFICAT`, `SSL_CLE` | **seulement si la DSI fournit le certificat** : chemins absolus du certificat (chaîne complète, PEM) et de sa clé privée, ex. `/etc/ssl/pole-jeunesse/fullchain.pem` et `/etc/ssl/pole-jeunesse/privkey.pem`. Les deux ou aucun ; sans eux, Let's Encrypt. |
 | `APP_BASE_URL` | `https://<adresse>` — **obligatoire**, en minuscules, sans « / » final. Seule source de l'adresse : liens des courriels, configuration Nginx et certificat, supervision. `deploy.sh` refuse de déployer sans elle. |
 | `IDFM_API_KEY` | reprise de l'hébergement actuel |
 | `INTERNAL_MONITORING_SECRET` | nouveau : `openssl rand -hex 32` |
@@ -186,13 +191,33 @@ livre la version, installe la sauvegarde nocturne (2 h) et la supervision
 (toutes les 5 min). `scripts/reinitialiser-mot-de-passe.sh` et
 `scripts/remise-a-zero.sh` lisent aussi `deploy.env`.
 
-Certificat Let's Encrypt (une fois le DNS en place, si le serveur est joignable
-depuis Internet) :
+### Certificat
+
+Tant qu'aucun certificat n'est en place, `deploy.sh` pose une configuration
+HTTP simple. Ensuite, selon la réponse de la DSI :
+
+**Let's Encrypt** (le serveur doit être joignable depuis Internet sur le port 80,
+DNS en place) :
 
 ```bash
 certbot --nginx -d <adresse>
 bash deploy.sh   # régénère la configuration Nginx HTTPS
 ```
+
+**Certificat fourni par la mairie** (ex. `*.ville-nogentsurmarne.fr`) : le
+déposer sur le serveur, clé lisible par root seulement, puis l'indiquer dans
+`/opt/pj-secrets.env` :
+
+```bash
+install -d -m 700 /etc/ssl/pole-jeunesse
+install -m 644 fullchain.pem /etc/ssl/pole-jeunesse/fullchain.pem   # certificat + intermédiaires
+install -m 600 privkey.pem   /etc/ssl/pole-jeunesse/privkey.pem
+printf 'SSL_CERTIFICAT=/etc/ssl/pole-jeunesse/fullchain.pem\nSSL_CLE=/etc/ssl/pole-jeunesse/privkey.pem\n' >> /opt/pj-secrets.env
+```
+
+puis `bash deploy.sh` depuis le Mac. Le renouvellement est alors à la charge
+de la DSI (le contrôle des secrets avertit à moins de 30 jours de l'expiration) ;
+demander que `/etc/ssl/pole-jeunesse` soit compris dans la sauvegarde du serveur.
 
 ## 7. Mise en service
 

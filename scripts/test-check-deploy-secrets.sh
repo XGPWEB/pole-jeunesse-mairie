@@ -58,6 +58,35 @@ expect 1 "APP_BASE_URL en majuscules"                "$D\n$J\nAPP_BASE_URL=https
 expect 1 "APP_BASE_URL avec caractère d'injection"   "$D\n$J\nAPP_BASE_URL=https://a.test;rm"
 expect 0 "APP_BASE_URL valide entre guillemets"      "$D\n$J\nAPP_BASE_URL=\"https://polejeunesse.ville-nogentsurmarne.fr\""
 
+# Certificat fourni (SSL_CERTIFICAT / SSL_CLE) : fabriqué ici, auto-signé.
+B="$D\n$J\n$URL"
+if command -v openssl >/dev/null 2>&1; then
+  openssl req -x509 -newkey rsa:2048 -nodes -days 365 -subj '/CN=polejeunesse.exemple.test' \
+    -keyout "$TMP/cle.pem" -out "$TMP/cert.pem" >/dev/null 2>&1
+  openssl req -x509 -newkey rsa:2048 -nodes -days 365 -subj '/CN=autre.exemple.test' \
+    -keyout "$TMP/autre-cle.pem" -out "$TMP/autre-cert.pem" >/dev/null 2>&1
+  openssl req -x509 -newkey rsa:2048 -nodes -days 10 -subj '/CN=bientot.exemple.test' \
+    -keyout "$TMP/court-cle.pem" -out "$TMP/court-cert.pem" >/dev/null 2>&1
+  echo "pas un certificat" > "$TMP/faux.pem"
+  expect 0 "certificat fourni valide"                "$B\nSSL_CERTIFICAT=$TMP/cert.pem\nSSL_CLE=$TMP/cle.pem"
+  expect 0 "certificat qui expire bientôt (avertit)" "$B\nSSL_CERTIFICAT=$TMP/court-cert.pem\nSSL_CLE=$TMP/court-cle.pem"
+  expect 1 "certificat sans sa clé"                  "$B\nSSL_CERTIFICAT=$TMP/cert.pem"
+  expect 1 "clé sans certificat"                     "$B\nSSL_CLE=$TMP/cle.pem"
+  expect 1 "clé d'un autre certificat"               "$B\nSSL_CERTIFICAT=$TMP/cert.pem\nSSL_CLE=$TMP/autre-cle.pem"
+  expect 1 "certificat introuvable"                  "$B\nSSL_CERTIFICAT=$TMP/absent.pem\nSSL_CLE=$TMP/cle.pem"
+  expect 1 "fichier qui n'est pas un certificat"     "$B\nSSL_CERTIFICAT=$TMP/faux.pem\nSSL_CLE=$TMP/cle.pem"
+  expect 1 "chemin relatif"                          "$B\nSSL_CERTIFICAT=cert.pem\nSSL_CLE=cle.pem"
+  expect 1 "chemin avec caractère spécial"           "$B\nSSL_CERTIFICAT=$TMP/cert.pem|x\nSSL_CLE=$TMP/cle.pem"
+  printf '%b\n' "$B\nSSL_CERTIFICAT=$TMP/court-cert.pem\nSSL_CLE=$TMP/court-cle.pem" > "$TMP/court.env"
+  # Sortie capturée d'abord : avec pipefail, « | grep -q » couperait le script (SIGPIPE).
+  SORTIE="$(bash "$CHECK" "$TMP/court.env" 2>&1 || true)"
+  if grep -q "moins de 30 jours" <<<"$SORTIE"; then
+    PASS=$((PASS + 1)); echo "  ✅ avertissement d'expiration proche affiché"
+  else
+    FAIL=$((FAIL + 1)); echo "  ❌ avertissement d'expiration proche absent"
+  fi
+fi
+
 # Le message d'erreur ne doit jamais contenir la valeur refusée.
 printf '%s\nJWT_SECRET=%s\n' "$DB" "court-mais-confidentiel" > "$TMP/secrets.env"
 if bash "$CHECK" "$TMP/secrets.env" 2>&1 | grep -q "court-mais-confidentiel"; then
