@@ -12,6 +12,8 @@ Rubriques possibles dans chaque version : *Ajouté*, *Modifié*, *Corrigé*, *S�
 
 ## [À venir]
 
+## [2.15.1]
+
 ### Corrigé
 
 - **Déploiement : l'adresse du site n'était pas transmise à l'application.** `APP_BASE_URL` était contrôlée et utilisée par Nginx, mais absente de la configuration PM2 : en production, « mot de passe oublié » et l'envoi des identifiants échouaient (« APP_BASE_URL manquant »). `ALLOWED_ORIGIN` et `MONITORING_OWNER_TENANT` sont désormais transmises aussi. Test de déploiement ajouté.
