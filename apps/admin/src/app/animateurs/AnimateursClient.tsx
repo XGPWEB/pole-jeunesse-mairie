@@ -331,7 +331,7 @@ function CredentialModal({ animateur, onClose }: CredentialModalProps) {
           {emailResult === 'success' && (
             <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 flex items-center gap-2 text-sm text-green-700">
               <span>&#x2705;</span>
-              <span>Email envoye avec succes a <strong>{animateur.email}</strong><br/><span className="text-xs text-green-600">Une copie a ete envoyee a x.gerinette@ville-nogentsurmarne.fr</span></span>
+              <span>Email envoye avec succes a <strong>{animateur.email}</strong></span>
             </div>
           )}
           {emailResult === 'error' && (
@@ -473,7 +473,6 @@ function ResetModal({ animateur, onClose }: ResetModalProps) {
                 <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3">
                   <p className="text-sm text-green-700 font-semibold mb-1">✅ Email envoyé avec succès !</p>
                   <p className="text-xs text-green-600">Le nouveau mot de passe a été envoyé à <strong>{animateur.email}</strong></p>
-                  <p className="text-xs text-green-500 mt-1">Copie envoyée à x.gerinette@ville-nogentsurmarne.fr</p>
                 </div>
               )}
               {resultat === 'non-enregistre' && (
@@ -861,7 +860,7 @@ function CreateModal({ onClose, editeur, role }: { onClose: () => void; editeur:
 
               {emailResult === 'success' && (
                 <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-sm text-green-700">
-                  ✅ Email envoyé à <strong>{form.email}</strong> — copie à xavier@pressweb.fr
+                  ✅ Email envoyé à <strong>{form.email}</strong>
                 </div>
               )}
               {emailResult === 'error' && (

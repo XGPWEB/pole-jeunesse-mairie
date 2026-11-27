@@ -104,7 +104,7 @@ export default function ReinitialisationClient() {
             {etat === 'formulaire' && (
               <>
                 <p className="text-gray-500 text-sm mb-5">
-                  Choisissez un nouveau mot de passe : au moins 8 caractères, une majuscule et un caractère spécial.
+                  Choisissez un nouveau mot de passe : au moins 12 caractères, une majuscule et un caractère spécial.
                 </p>
                 {error && (
                   <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">⚠️ {error}</div>

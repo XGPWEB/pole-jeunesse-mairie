@@ -70,6 +70,7 @@ function daysUntil(dateStr: string): number {
 }
 
 function formatDate(dateStr: string): string {
+  if (!dateStr) return '';
   return new Date(dateStr).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
@@ -231,8 +232,10 @@ function TabOverview({ data }: { data: RgpdData }) {
               { label: 'Organisme', value: data.dpo.nom },
               { label: 'Email DPO', value: data.dpo.email, link: true },
               { label: 'Téléphone', value: data.dpo.telephone },
-              { label: 'Désigné le', value: formatDate(data.dpo.dateDesignation) },
-              { label: 'N° CNIL', value: data.dpo.numeroCNIL },
+              { label: 'Adresse', value: data.dpo.adresse },
+              // Vides tant que la désignation du DPO n'a pas été vérifiée.
+              { label: 'Désigné le', value: formatDate(data.dpo.dateDesignation) || 'À compléter' },
+              { label: 'N° CNIL', value: data.dpo.numeroCNIL || 'À compléter' },
             ].map(row => (
               <div key={row.label} className="flex items-center gap-3">
                 <span className="text-gray-400 text-xs w-24 shrink-0">{row.label}</span>

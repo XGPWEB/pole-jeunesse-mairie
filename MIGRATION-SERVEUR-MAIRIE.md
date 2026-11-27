@@ -76,6 +76,14 @@ Questions envoyées à la DSI ; cocher au fur et à mesure des réponses.
   « Certificat » en section 6). Le contrôle des secrets vérifie que la clé
   correspond au certificat et qu'il n'est pas expiré ; Nginx est rétabli dans sa
   configuration précédente si la nouvelle est refusée.
+- [x] **Comptes** (audit du 2026-11-20) : session fermée après 10 minutes
+  d'inactivité, reconnexion chaque jour, mots de passe de 12 caractères au
+  minimum. Les mots de passe existants restent valables jusqu'au prochain
+  changement ; tout le monde doit se reconnecter après la mise à jour.
+- [x] **Information RGPD des agents** sur leur profil et leur fiche. Le registre
+  (`apps/admin/src/data/rgpd.json`) est à faire relire par le DPO.
+- [ ] **Double authentification obligatoire** pour les administrateurs (encore
+  facultative).
 - [ ] **Audit final** avant mise en service.
 
 ## 3. Préparer le serveur
@@ -122,6 +130,13 @@ répond alors 404).
 Créer `/opt/pj-smtp.env` (`chmod 600`) avec les paramètres SMTP de la mairie :
 `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`,
 `MAIL_ADMIN`.
+
+`MAIL_FROM` est l'adresse d'expédition de **tous** les courriels de l'application
+(identifiants, mot de passe oublié, alertes) ; elle apparaît aussi dans la
+signature. Elle doit appartenir au domaine de la ville et être autorisée en
+envoi par le serveur SMTP de la mairie : un courriel `@ville-nogentsurmarne.fr`
+envoyé par un autre serveur (Gmail…) part en indésirables ou est refusé.
+`MAIL_ADMIN` reçoit les alertes : l'adresse professionnelle de l'administrateur.
 
 ## 4. Copier la base actuelle (la veille ou le jour J)
 

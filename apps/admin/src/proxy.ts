@@ -3,6 +3,9 @@ import { jwtVerify } from 'jose';
 import { getJwtSecretKey } from '@/lib/jwt-secret';
 import { rubriquesExigees, satisfaitExigence } from '@/lib/rubriques';
 
+/** Même limite que lib/auth.ts (SESSION_DUREE_MAX_SECONDS), qui dépend de `pg`. */
+const SESSION_DUREE_MAX_SECONDS = 24 * 60 * 60;
+
 // Même garde de démarrage que lib/auth.ts (module partagé, compatible Edge) :
 // secret absent, vide, trop court ou placeholder connu → refus de démarrer.
 const JWT_SECRET = getJwtSecretKey();
@@ -109,7 +112,7 @@ export async function proxy(request: NextRequest) {
 
   if (!token) return refuser(false);
 
-  let payload: { role?: string; id?: string; type?: string; rubriques?: string[] | null };
+  let payload: { role?: string; id?: string; type?: string; rubriques?: string[] | null; auth_time?: unknown };
   try {
     const result = await jwtVerify(token, JWT_SECRET, { algorithms: ['HS256'] });
     payload = result.payload as typeof payload;
@@ -126,6 +129,15 @@ export async function proxy(request: NextRequest) {
   // suspension et attributs actuels (rôle, tenant) sont contrôlés en base par
   // la garde unique de lib/auth.ts, appelée par chaque route, action et layout.
   if (payload.type !== undefined && payload.type !== null) {
+    return refuser(true);
+  }
+
+  // Reconnexion chaque jour : connexion d'origine de plus de 24 heures, ou
+  // jeton émis avant l'ajout de `auth_time` (sessions de 30 jours). Les 10
+  // minutes d'inactivité sont portées par l'expiration du jeton (jwtVerify).
+  const maintenant = Math.floor(Date.now() / 1000);
+  if (typeof payload.auth_time !== 'number' || payload.auth_time > maintenant + 60
+    || maintenant - payload.auth_time >= SESSION_DUREE_MAX_SECONDS) {
     return refuser(true);
   }
 

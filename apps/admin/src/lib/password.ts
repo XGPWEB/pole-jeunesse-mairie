@@ -6,9 +6,16 @@
  * Retourne le message d'erreur à afficher, ou `null` si le mot de passe est
  * acceptable.
  */
+/**
+ * Longueur minimale : 12 caractères (recommandation CNIL, constat de l'audit
+ * du 2026-11-20). Ne s'applique qu'aux nouveaux mots de passe : les comptes
+ * existants gardent le leur jusqu'au prochain changement.
+ */
+export const MOT_DE_PASSE_LONGUEUR_MIN = 12;
+
 export function erreurPolitiqueMotDePasse(motDePasse: unknown): string | null {
-  if (typeof motDePasse !== 'string' || motDePasse.length < 8) {
-    return 'Le mot de passe doit faire au moins 8 caractères.';
+  if (typeof motDePasse !== 'string' || motDePasse.length < MOT_DE_PASSE_LONGUEUR_MIN) {
+    return `Le mot de passe doit faire au moins ${MOT_DE_PASSE_LONGUEUR_MIN} caractères.`;
   }
   // bcrypt ignore silencieusement tout ce qui dépasse 72 octets : au-delà, deux
   // mots de passe différents donneraient le même hash.

@@ -114,7 +114,7 @@ describe('chemin → rubriques exigées', () => {
 describe('proxy — rubriques portées par le jeton', () => {
   const SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
   async function jeton(claims: Record<string, unknown>): Promise<string> {
-    return new SignJWT({ id: 'u1', username: 'u', role: 'animateur', espaceAssigne: 'x', tenant_id: 'nogent', ...claims })
+    return new SignJWT({ id: 'u1', username: 'u', role: 'animateur', espaceAssigne: 'x', tenant_id: 'nogent', auth_time: Math.floor(Date.now() / 1000), ...claims })
       .setProtectedHeader({ alg: 'HS256' }).setIssuedAt().setExpirationTime('5m').sign(SECRET);
   }
   async function requete(chemin: string, claims: Record<string, unknown>, method = 'GET') {

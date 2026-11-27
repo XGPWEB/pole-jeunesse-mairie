@@ -165,8 +165,8 @@ describe('forgot-password — notification rattachée au tenant du compte', () =
     // Même temporisation que pour un admin, puis le lien sert jusqu'au bout.
     await demander(animateur.username);
     expect(courriel.envois).toHaveLength(1);
-    expect((await confirmer(jetonDuLien(courriel.envois[0].lien), 'Anim!Pass42')).status).toBe(200);
-    expect(await motDePasseValide(animateur.id, 'Anim!Pass42')).toBe(true);
+    expect((await confirmer(jetonDuLien(courriel.envois[0].lien), 'Anim!Pass4242')).status).toBe(200);
+    expect(await motDePasseValide(animateur.id, 'Anim!Pass4242')).toBe(true);
   });
 
   it('une seule demande en attente par compte (pas d’inondation du tableau de bord)', async () => {
@@ -207,8 +207,8 @@ describe('forgot-password — compte superadmin (tenant system)', () => {
     expect(courriel.envois).toHaveLength(1);
 
     // Le lien fonctionne jusqu'au bout.
-    expect((await confirmer(jetonDuLien(courriel.envois[0].lien), 'Super!Pass9')).status).toBe(200);
-    expect(await motDePasseValide(superadmin.id, 'Super!Pass9')).toBe(true);
+    expect((await confirmer(jetonDuLien(courriel.envois[0].lien), 'Super!Pass999')).status).toBe(200);
+    expect(await motDePasseValide(superadmin.id, 'Super!Pass999')).toBe(true);
   });
 
   it('sans adresse : aucun lien (pas de repli sur MAIL_ADMIN), aucune notification morte, trace d’audit, même réponse', async () => {

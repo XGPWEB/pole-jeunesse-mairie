@@ -60,7 +60,7 @@ export default function ProfilClient({ animateur: initial }: { animateur: Animat
   // Validation mot de passe en temps réel
   const pwdErrors: string[] = [];
   if (newPwd) {
-    if (newPwd.length < 8) pwdErrors.push('Au moins 8 caractères');
+    if (newPwd.length < 12) pwdErrors.push('Au moins 12 caractères');
     if (!/[A-Z]/.test(newPwd)) pwdErrors.push('Au moins une majuscule');
     if (!/[!@#$%^&*?_\-+=~|\\/<>,.;:'"]/.test(newPwd)) pwdErrors.push('Au moins un caractère spécial');
   }
@@ -339,7 +339,7 @@ export default function ProfilClient({ animateur: initial }: { animateur: Animat
                 type={showNewPwd ? 'text' : 'password'}
                 value={newPwd}
                 onChange={e => setNewPwd(e.target.value)}
-                placeholder="Minimum 8 caractères"
+                placeholder="Minimum 12 caractères"
                 className="w-full px-3 py-2.5 pr-10 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#6B1A6E]/30 focus:border-[#6B1A6E]"
               />
             </Field>
@@ -375,7 +375,7 @@ export default function ProfilClient({ animateur: initial }: { animateur: Animat
             {!newPwd && (
               <div className="mt-2 text-xs text-gray-400 space-y-0.5">
                 <p>Le mot de passe doit contenir :</p>
-                <p>• Au moins 8 caractères</p>
+                <p>• Au moins 12 caractères</p>
                 <p>• Au moins une majuscule (A–Z)</p>
                 <p>• Au moins un caractère spécial (!@#$%...)</p>
               </div>
