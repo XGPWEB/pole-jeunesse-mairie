@@ -12,8 +12,12 @@ Rubriques possibles dans chaque version : *Ajouté*, *Modifié*, *Corrigé*, *S�
 
 ## [À venir]
 
+## [2.15.0]
+
 ### Ajouté
 
+- **Adresse du site configurable** : l'adresse vient d'un seul réglage du serveur, `APP_BASE_URL` (`/opt/pj-secrets.env`), et n'est plus écrite dans le code ni dans `deploy.sh` (courriels, lien de réinitialisation, CORS, Nginx, supervision). Le contrôle des secrets l'exige, sous la forme `https://<domaine>`.
+- **Certificat au choix** : Let's Encrypt par défaut, ou le certificat fourni par la mairie (`SSL_CERTIFICAT` et `SSL_CLE`). Le contrôle des secrets vérifie la clé et la validité du certificat, et la configuration Nginx précédente est rétablie si la nouvelle est refusée.
 - Profil et fiche d'un agent : mention d'information RGPD (responsable, finalité, base légale, données, destinataires, conservation, droits et contact du DPO, réclamation à la CNIL), tirée du registre des traitements, dont la liste des données des comptes est complétée.
 - Registre RGPD : coordonnées du délégué à la protection des données mutualisé d'Infocom 94 (courriel, téléphone, adresse, affichée sur la page RGPD). La date de désignation et le numéro CNIL, non vérifiés, sont à compléter.
 
