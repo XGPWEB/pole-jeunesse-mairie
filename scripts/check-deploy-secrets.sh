@@ -77,4 +77,27 @@ if ! [[ "$APP_URL" =~ ^https://[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-
   fail "APP_BASE_URL doit être de la forme https://<nom de domaine> en minuscules, sans chemin ni « / » final."
 fi
 
+# Certificat fourni par la mairie (facultatif) : SSL_CERTIFICAT et SSL_CLE,
+# chemins absolus, les deux ou aucun. Sans eux, deploy.sh utilise Let's Encrypt.
+CERT="$(read_secret SSL_CERTIFICAT)"
+CLE="$(read_secret SSL_CLE)"
+if [ -n "$CERT" ] || [ -n "$CLE" ]; then
+  [ -n "$CERT" ] && [ -n "$CLE" ] || fail "SSL_CERTIFICAT et SSL_CLE vont ensemble : renseigner les deux, ou aucun (Let's Encrypt)."
+  for chemin in "$CERT" "$CLE"; do
+    [[ "$chemin" =~ ^/[A-Za-z0-9._/-]+$ ]] || fail "SSL_CERTIFICAT / SSL_CLE : chemin absolu attendu, sans espace ni caractère spécial."
+    [ -r "$chemin" ] || fail "Fichier de certificat introuvable ou illisible : $chemin"
+  done
+  if command -v openssl >/dev/null 2>&1; then
+    openssl x509 -noout -in "$CERT" 2>/dev/null || fail "SSL_CERTIFICAT n'est pas un certificat lisible (format PEM attendu)."
+    PUB_CERT="$(openssl x509 -noout -pubkey -in "$CERT" 2>/dev/null | openssl sha256 2>/dev/null)"
+    PUB_CLE="$(openssl pkey -pubout -in "$CLE" 2>/dev/null | openssl sha256 2>/dev/null)"
+    [ -n "$PUB_CLE" ] && [ "$PUB_CERT" = "$PUB_CLE" ] || fail "SSL_CLE ne correspond pas à SSL_CERTIFICAT."
+    openssl x509 -checkend 0 -noout -in "$CERT" >/dev/null 2>&1 || fail "Le certificat SSL_CERTIFICAT est expiré."
+    if ! openssl x509 -checkend $((30 * 86400)) -noout -in "$CERT" >/dev/null 2>&1; then
+      echo "  ⚠️  Le certificat fourni expire dans moins de 30 jours : demander son renouvellement à la DSI."
+    fi
+  fi
+  echo "  🔒 Certificat fourni utilisable"
+fi
+
 echo "  🔑 Fichier secrets présent, DATABASE_URL, JWT_SECRET et APP_BASE_URL utilisables"
