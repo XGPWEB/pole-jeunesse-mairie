@@ -516,6 +516,14 @@ env = {
     'JWT_SECRET': secrets['JWT_SECRET'],
     'DATABASE_URL': secrets['DATABASE_URL'],
     'IDFM_API_KEY': secrets.get('IDFM_API_KEY', ''),
+    # Adresse publique du site (lib/adresse.ts) : sans elle, les liens de
+    # réinitialisation et les courriels d'identifiants ne partent pas. Elle
+    # était contrôlée et lue par Nginx, mais jamais transmise à l'application.
+    'APP_BASE_URL': secrets.get('APP_BASE_URL', ''),
+    # Optionnels : origine CORS historique, commune exploitante du monitoring
+    # (vide = 'nogent', lib/monitoring.ts).
+    'ALLOWED_ORIGIN': secrets.get('ALLOWED_ORIGIN', ''),
+    'MONITORING_OWNER_TENANT': secrets.get('MONITORING_OWNER_TENANT', ''),
     # Optionnel : secret partagé des scripts d'exploitation pour signaler un
     # échec au journal de monitoring. Vide = route interne désactivée (404).
     'INTERNAL_MONITORING_SECRET': secrets.get('INTERNAL_MONITORING_SECRET', ''),

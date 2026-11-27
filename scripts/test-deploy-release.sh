@@ -105,6 +105,8 @@ http.createServer((req, res) => {
     ...(meta.sansRelease ? {} : { release: process.env.PJ_RELEASE_ID || null }),
     hostname: process.env.HOSTNAME || '', jwtLongueur: (process.env.JWT_SECRET || '').length,
     base: process.env.DATABASE_URL || '', smtp: process.env.SMTP_HOST || '', repertoire: __dirname,
+    adresse: process.env.APP_BASE_URL || '', origine: process.env.ALLOWED_ORIGIN ?? '(absente)',
+    exploitant: process.env.MONITORING_OWNER_TENANT ?? '(absente)',
   }));
 }).listen(Number(process.env.PORT), process.env.HOSTNAME || '0.0.0.0');
 JS
@@ -137,7 +139,7 @@ PY
 
 SECRET_JWT="jwt-d'essai-avec\\barre-et-\"guillemets\"-0123456789abcdef"
 ecrire_secrets() {
-  printf '%s\n' "# fichier d'essai" "JWT_SECRET=ancienne-valeur-ignoree" "IDFM_API_KEY='cle-idfm'" "DATABASE_URL=\"postgresql://u:p'w@localhost:5432/base\"" "JWT_SECRET=${SECRET_JWT}" > "${T}/secrets.env"
+  printf '%s\n' "# fichier d'essai" "JWT_SECRET=ancienne-valeur-ignoree" "IDFM_API_KEY='cle-idfm'" "DATABASE_URL=\"postgresql://u:p'w@localhost:5432/base\"" "JWT_SECRET=${SECRET_JWT}" "APP_BASE_URL=https://pj.exemple.test" "MONITORING_OWNER_TENANT=commune-test" > "${T}/secrets.env"
   printf '%s\n' "SMTP_HOST=smtp.exemple.test" "SMTP_PORT=587" > "${T}/smtp.env"
 }
 ecrire_secrets
@@ -219,6 +221,12 @@ egal "configuration lisible par son seul propriétaire" "600" "$(python3 -c 'imp
 egal "secret avec apostrophe, barre oblique et guillemets transmis intact (dernière occurrence du fichier)" "${#SECRET_JWT}" "$(sante jwtLongueur)"
 egal "DATABASE_URL avec apostrophe transmise intacte" "postgresql://u:p'w@localhost:5432/base" "$(sante base)"
 egal "variables SMTP transmises" "smtp.exemple.test" "$(sante smtp)"
+# Sans APP_BASE_URL, l'application refuse d'envoyer les liens de réinitialisation
+# et les identifiants (lib/adresse.ts) : elle doit être transmise depuis
+# /opt/pj-secrets.env, comme ALLOWED_ORIGIN et MONITORING_OWNER_TENANT.
+egal "adresse du site (APP_BASE_URL) transmise" "https://pj.exemple.test" "$(sante adresse)"
+egal "ALLOWED_ORIGIN transmise, vide si absente du fichier" "" "$(sante origine)"
+egal "commune exploitante du monitoring transmise" "commune-test" "$(sante exploitant)"
 egal "écoute sur la boucle locale uniquement" "127.0.0.1" "$(sante hostname)"
 vrai "aucun secret dans la sortie du script" "! grep -q -e 'jwt-d' -e 'postgresql://' '${T}/sortie'"
 egal "versions gardées : celle en service et la précédente" "2.0.0-bbbbbbb avant-releases" "$(versions_gardees)"
