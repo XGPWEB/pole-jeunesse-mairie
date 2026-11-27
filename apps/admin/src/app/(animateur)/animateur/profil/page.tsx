@@ -5,6 +5,7 @@ import { queryOne } from '@/lib/db';
 import ProfilClient from './ProfilClient';
 import MenuPersonnalisation from './MenuPersonnalisation';
 import { rubriquesEffectives } from '@/lib/rubriques';
+import MentionRgpdCompte from '@/components/MentionRgpdCompte';
 
 export default async function ProfilPage() {
   const session = await getSession();
@@ -26,6 +27,9 @@ export default async function ProfilPage() {
     <div className="p-6 space-y-6">
       <ProfilClient animateur={animateur} />
       <MenuPersonnalisation navPrefs={animateur.navPrefs ?? null} rubriques={[...rubriquesEffectives(session)]} />
+      <div className="max-w-3xl mx-auto px-6">
+        <MentionRgpdCompte />
+      </div>
     </div>
   );
 }

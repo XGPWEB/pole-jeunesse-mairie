@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import MonitoringReporter from '@/components/MonitoringReporter';
+import SurveillanceInactivite from '@/components/SurveillanceInactivite';
 
 export const metadata: Metadata = {
   title: 'Pôle Jeunesse Nogent',
@@ -15,6 +16,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {/* Signale au journal de monitoring les erreurs survenues dans le navigateur. */}
         <MonitoringReporter />
+        {/* Ferme la session après 10 minutes sans action (lib/auth.ts). */}
+        <SurveillanceInactivite />
         {children}
       </body>
     </html>

@@ -4,6 +4,7 @@ import { exigerAdminPage } from '@/lib/session';
 import { queryOne } from '@/lib/db';
 import FicheAnimateurClient from './FicheAnimateurClient';
 import { rubriquesEffectives } from '@/lib/rubriques';
+import MentionRgpdCompte from '@/components/MentionRgpdCompte';
 
 export default async function FicheAnimateurPage({ params: props_params }: { params: Promise<{ id: string }> }) {
   const params = await props_params;
@@ -22,9 +23,15 @@ export default async function FicheAnimateurPage({ params: props_params }: { par
 
   if (!animateur) notFound();
   return (
-    <FicheAnimateurClient
-      animateur={animateur}
-      editeur={{ id: session.id, rubriques: [...rubriquesEffectives(session)], gereDroits: session.gereDroits === true }}
-    />
+    <>
+      <FicheAnimateurClient
+        animateur={animateur}
+        editeur={{ id: session.id, rubriques: [...rubriquesEffectives(session)], gereDroits: session.gereDroits === true }}
+      />
+      {/* Information due à l'agent (art. 13 RGPD), à lui communiquer à la création du compte. */}
+      <div className="p-6">
+        <MentionRgpdCompte titulaire="agent" />
+      </div>
+    </>
   );
 }

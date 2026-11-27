@@ -12,6 +12,22 @@ Rubriques possibles dans chaque version : *Ajouté*, *Modifié*, *Corrigé*, *S�
 
 ## [À venir]
 
+### Ajouté
+
+- Profil et fiche d'un agent : mention d'information RGPD (responsable, finalité, base légale, données, destinataires, conservation, droits et contact du DPO, réclamation à la CNIL), tirée du registre des traitements, dont la liste des données des comptes est complétée.
+- Registre RGPD : coordonnées du délégué à la protection des données mutualisé d'Infocom 94 (courriel, téléphone, adresse, affichée sur la page RGPD). La date de désignation et le numéro CNIL, non vérifiés, sont à compléter.
+
+### Sécurité
+
+- Sessions : fermeture après 10 minutes sans action, avec un avertissement une minute avant, et reconnexion obligatoire chaque jour (24 heures au plus après la connexion) au lieu de 30 jours. Les sessions ouvertes avant la mise à jour sont fermées.
+- Mots de passe : 12 caractères au minimum au lieu de 8, pour tout nouveau mot de passe.
+
+### Corrigé
+
+- Courriels : l'expéditeur vient de `MAIL_FROM` et non plus du compte de connexion SMTP, qui peut être un identifiant technique sur la messagerie de la mairie ; sans adresse d'expédition valide, l'envoi échoue avec un message explicite.
+- Courriel d'identifiants : la signature affiche l'adresse d'expédition au lieu d'une ancienne adresse écrite en dur.
+- Page Équipe : retrait des messages « copie envoyée à … », faux (aucune copie n'était envoyée).
+
 ## [2.14.0]
 
 ### Sécurité

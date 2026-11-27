@@ -23,6 +23,8 @@ export interface JWTPayload {
   prenom?: string;
   iat?: number;
   exp?: number;
+  /** Heure de la connexion (secondes) : borne la session à 24 h, jamais prolongée. */
+  auth_time?: number;
   /** 'totp-pending' : billet temporaire 2FA — ne donne aucun droit d'accès */
   type?: string;
   /**
@@ -48,22 +50,52 @@ export interface JWTPayload {
 export const SESSION_COOKIE = 'pj_token';
 
 /**
- * Durée de vie d'une session authentifiée (30 jours).
- * Utilisée à la fois pour l'expiration du JWT et pour le maxAge du cookie
- * `pj_token` — les deux DOIVENT rester synchronisés, sinon le navigateur garde
- * un cookie que le serveur rejette (ou l'inverse).
- * Ne s'applique pas au billet temporaire 2FA, volontairement court (5 min).
+ * Durées d'une session (constat « sessions de 30 jours » de l'audit du
+ * 2026-11-20) :
+ *
+ *  - INACTIVITÉ : le jeton n'est valable que 10 minutes. Il est prolongé par
+ *    `POST /api/session/activite`, que le navigateur n'appelle que sur une
+ *    vraie action de l'utilisateur (clic, frappe, défilement — voir
+ *    components/SurveillanceInactivite.tsx), jamais sur les rafraîchissements
+ *    automatiques des pages. Dix minutes sans action ferment donc la session,
+ *    même si un onglet reste ouvert.
+ *  - DURÉE MAXIMALE : quelle que soit l'activité, une session ne dépasse pas
+ *    24 heures après la connexion (claim `auth_time`, jamais prolongé) : il
+ *    faut se reconnecter chaque jour.
+ *
+ * Le billet temporaire 2FA a sa propre durée (5 min, lib/login.ts).
  */
-export const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30;
+export const SESSION_INACTIVITE_SECONDS = 10 * 60;
+export const SESSION_DUREE_MAX_SECONDS = 24 * 60 * 60;
 
+/**
+ * maxAge du cookie `pj_token` : la durée maximale. L'expiration réelle est
+ * celle du JWT (10 min sans activité), contrôlée par le proxy et la garde.
+ */
+export const SESSION_TTL_SECONDS = SESSION_DUREE_MAX_SECONDS;
+
+/** Vrai si la connexion d'origine (`auth_time`) date de moins de 24 heures. */
+export function connexionRecente(authTime: unknown, maintenant = Math.floor(Date.now() / 1000)): boolean {
+  return typeof authTime === 'number' && authTime <= maintenant + 60
+    && maintenant - authTime < SESSION_DUREE_MAX_SECONDS;
+}
+
+/**
+ * Signe un jeton. `auth_time` (heure de la connexion) est repris s'il est
+ * fourni — prolongation d'une session — sinon fixé à maintenant ; l'expiration
+ * ne dépasse jamais `auth_time` + 24 h.
+ */
 export async function signJWT(
   payload: Omit<JWTPayload, 'iat' | 'exp'>,
-  ttlSeconds = SESSION_TTL_SECONDS,
+  ttlSeconds = SESSION_INACTIVITE_SECONDS,
 ): Promise<string> {
-  return new SignJWT({ ...payload })
+  const maintenant = Math.floor(Date.now() / 1000);
+  const authTime = typeof payload.auth_time === 'number' ? payload.auth_time : maintenant;
+  const exp = Math.min(maintenant + ttlSeconds, authTime + SESSION_DUREE_MAX_SECONDS);
+  return new SignJWT({ ...payload, auth_time: authTime })
     .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setExpirationTime(Math.floor(Date.now() / 1000) + ttlSeconds)
+    .setIssuedAt(maintenant)
+    .setExpirationTime(exp)
     .sign(JWT_SECRET);
 }
 
@@ -133,6 +165,7 @@ interface LigneSession {
  *     pages et les API sur celles du jeton. Un compte dont on a changé les
  *     rubriques doit se reconnecter (ses sessions sont aussi révoquées par
  *     modifierAnimateur) : un ancien jeton ne rouvre jamais une rubrique retirée.
+ *  1 bis. Connexion d'origine (`auth_time`) de moins de 24 heures.
  *  6. Les attributs renvoyés (rôle, tenant, espace, identité) sont ceux de la
  *     BASE, pas ceux du JWT : un admin rétrogradé, déplacé d'espace ou de
  *     structure n'emporte pas ses anciens droits dans son jeton.
@@ -143,6 +176,9 @@ async function resoudreSession(token: string | null | undefined): Promise<JWTPay
   const payload = await verifyJWT(token);
   if (!payload || typeof payload.id !== 'string' || payload.id === '') return null;
   if (payload.type !== undefined && payload.type !== null) return null;
+  // Connexion de plus de 24 h, ou jeton émis avant l'ajout de `auth_time`
+  // (sessions de 30 jours) : reconnexion obligatoire.
+  if (!connexionRecente(payload.auth_time)) return null;
 
   const row = await queryOne<LigneSession>(
     `SELECT username, nom, prenom, role, statut, espace_assigne, tenant_id,

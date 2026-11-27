@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Field from '@/components/Field';
 import { APP_VERSION } from '@/lib/version';
@@ -14,6 +14,14 @@ export default function LoginClient() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [info, setInfo] = useState('');
+
+  // Retour après une fermeture de session (components/SurveillanceInactivite).
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('motif') === 'inactivite') {
+      setInfo('Votre session a été fermée après 10 minutes d\'inactivité. Reconnectez-vous pour continuer.');
+    }
+  }, []);
 
   const [totpCode, setTotpCode] = useState('');
   const [totpPending, setTotpPending] = useState('');
@@ -154,6 +162,11 @@ export default function LoginClient() {
             {screen === 'login' && (
               <>
                 <p className="text-gray-500 text-sm text-center mb-6">Connectez-vous à votre espace personnel</p>
+                {info && !error && (
+                  <div role="status" className="mb-5 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm flex items-center gap-2">
+                    <span aria-hidden="true">⏳</span>{info}
+                  </div>
+                )}
                 {error && (
                   <div className="mb-5 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm flex items-center gap-2">
                     <span>⚠️</span>{error}

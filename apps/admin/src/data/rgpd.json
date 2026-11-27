@@ -129,9 +129,10 @@
       "referenceRgpd": "Art. 6.1.b RGPD",
       "referenceLoi": "Code du travail — art. L.1221-1",
       "categoriesDonnees": [
-        "Identité",
-        "Coordonnées professionnelles",
-        "Données RH (contrat, espace)"
+        "Identité (nom, prénom, date de naissance, photo)",
+        "Coordonnées (e-mail, téléphone, adresse)",
+        "Données RH (poste, contrat, espace, dates d'embauche et de fin de contrat)",
+        "Données de connexion (identifiant, mot de passe chiffré, dernière connexion, journal des actions)"
       ],
       "donnesSensibles": false,
       "concerMineurs": false,
@@ -145,7 +146,7 @@
       "dureeArchiveIntermediaire": "5 ans après fin de contrat",
       "dureeArchiveDefinitive": "Destruction après 10 ans (prescriptions sociales)",
       "referentielCNIL": "Référentiel CNIL — Gestion des ressources humaines",
-      "mesuresSecurite": "Mots de passe hachés (bcrypt), journalisation des connexions, accès par rôle",
+      "mesuresSecurite": "Mots de passe hachés (bcrypt), journalisation des connexions et des actions, accès par rôle, déconnexion après 10 minutes d'inactivité et reconnexion chaque jour",
       "aipdRequise": false,
       "aipdStatut": "non requise",
       "responsable": "Mairie de Nogent-sur-Marne",
@@ -196,13 +197,13 @@
   "demandesDroits": [],
   "consentements": [],
   "dpo": {
-    "nom": "Service Juridique — Mairie de Nogent-sur-Marne",
-    "email": "dpo@ville-nogentsurmarne.fr",
-    "telephone": "01 48 72 73 00",
-    "adresse": "68 rue de Plaisance, 94130 Nogent-sur-Marne",
-    "dateDesignation": "2018-05-25",
+    "nom": "Infocom 94 (DPO mutualisé) — Tidjani Issaka",
+    "email": "rgpd@infocom94.fr",
+    "telephone": "01 48 89 31 79",
+    "adresse": "Infocom 94, 92 boulevard de la Marne, 94214 La Varenne-Saint-Hilaire Cedex",
+    "dateDesignation": "",
     "declareCNIL": true,
-    "numeroCNIL": "DPO-94-0042",
+    "numeroCNIL": "",
     "obligatoire": true,
     "fondementObligation": "Art. 37 RGPD — Collectivité territoriale (autorité publique)"
   }

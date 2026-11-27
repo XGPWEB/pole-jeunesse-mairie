@@ -20,7 +20,7 @@ test.beforeAll(async () => {
   await pool.query(`INSERT INTO animateurs (id, nom, prenom, username, statut, role, tenant_id, rubriques)
     VALUES ($1, 'Audit', 'Local', $1, 'actif', 'admin', 'e2e-a', '{}')`, [compteId]);
   await pool.query(`INSERT INTO jeunes (id, nom, prenom, tenant_id) VALUES ($1, 'Audit', 'Local', 'e2e-a')`, [jeuneId]);
-  token = await new SignJWT({ id: compteId, role: 'admin', sv: 0, rubriques: [] })
+  token = await new SignJWT({ id: compteId, role: 'admin', auth_time: Math.floor(Date.now() / 1000), sv: 0, rubriques: [] })
     .setProtectedHeader({ alg: 'HS256' }).setIssuedAt().setExpirationTime('10m')
     .sign(new TextEncoder().encode(secret));
 });
@@ -46,7 +46,7 @@ test('le logo de connexion reste public', async ({ request }) => {
 
 test('une rubrique Activités permet la recherche résumée, mais pas les contacts de la fiche', async ({ request }) => {
   await pool.query('UPDATE animateurs SET rubriques = $2 WHERE id = $1', [compteId, ['activites']]);
-  const jetonActivites = await new SignJWT({ id: compteId, role: 'admin', sv: 0, rubriques: ['activites'] })
+  const jetonActivites = await new SignJWT({ id: compteId, role: 'admin', auth_time: Math.floor(Date.now() / 1000), sv: 0, rubriques: ['activites'] })
     .setProtectedHeader({ alg: 'HS256' }).setIssuedAt().setExpirationTime('10m')
     .sign(new TextEncoder().encode(process.env.E2E_JWT_SECRET));
   const headers = { Cookie: `pj_token=${jetonActivites}` };
@@ -59,7 +59,7 @@ test('un ancien bon de commande HTML garde le bac à sable dans la réponse HTTP
   const id = `audit-bon-${randomUUID()}`;
   const contenu = `data:text/html;base64,${Buffer.from('<script>alert(document.domain)</script>').toString('base64')}`;
   await pool.query('INSERT INTO sorties (id, titre, tenant_id, bon_commande) VALUES ($1,$1,$2,$3)', [id, 'e2e-a', contenu]);
-  const session = await new SignJWT({ id: 'e2e-admin-a', role: 'admin', sv: 0, rubriques: null })
+  const session = await new SignJWT({ id: 'e2e-admin-a', role: 'admin', auth_time: Math.floor(Date.now() / 1000), sv: 0, rubriques: null })
     .setProtectedHeader({ alg: 'HS256' }).setIssuedAt().setExpirationTime('10m')
     .sign(new TextEncoder().encode(process.env.E2E_JWT_SECRET));
   const res = await request.get(`/api/sorties/bon-commande?id=${id}`, { headers: { Cookie: `pj_token=${session}` } });

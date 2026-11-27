@@ -12,7 +12,7 @@ import { proxy as middleware } from '@/proxy';
 const SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 
 async function jeton(claims: Record<string, unknown>, secret = SECRET): Promise<string> {
-  return new SignJWT({ id: 'u1', username: 'u', role: 'admin', espaceAssigne: 'x', tenant_id: 'nogent', ...claims })
+  return new SignJWT({ id: 'u1', username: 'u', role: 'admin', espaceAssigne: 'x', tenant_id: 'nogent', auth_time: Math.floor(Date.now() / 1000), ...claims })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('5m')
@@ -109,5 +109,30 @@ describe('middleware — pages', () => {
     for (const chemin of ['/api/pij/rdv', '/api/pij/agenda/lien', '/api/pij/agenda/flux', '/api/pij/accueils', '/api/pij/import']) {
       expect((await middleware(requete(chemin))).status, chemin).toBe(401);
     }
+  });
+});
+
+describe('middleware — durées de session', () => {
+  const maintenant = () => Math.floor(Date.now() / 1000);
+
+  it('refuse un jeton sans heure de connexion (émis avant les sessions de 24 h)', async () => {
+    const res = await middleware(requete('/api/jeunes', { cookie: await jeton({ auth_time: undefined }) }));
+    expect(res.status).toBe(401);
+  });
+
+  it('refuse une connexion de plus de 24 heures, même si le jeton n’a pas expiré', async () => {
+    const res = await middleware(requete('/api/jeunes', { cookie: await jeton({ auth_time: maintenant() - 24 * 3600 - 1 }) }));
+    expect(res.status).toBe(401);
+  });
+
+  it('page : une session fermée renvoie vers la connexion et efface le cookie', async () => {
+    const res = await middleware(requete('/admin/dashboard', { cookie: await jeton({ auth_time: maintenant() - 25 * 3600 }) }));
+    expect(new URL(res.headers.get('location')!).pathname).toBe('/login');
+    expect(res.headers.get('set-cookie') ?? '').toMatch(/pj_token=;/);
+  });
+
+  it('laisse passer une connexion de moins de 24 heures', async () => {
+    const res = await middleware(requete('/api/jeunes', { cookie: await jeton({ auth_time: maintenant() - 23 * 3600 }) }));
+    expect(laissePasser(res)).toBe(true);
   });
 });

@@ -147,8 +147,8 @@ Créer `apps/admin/.env.local` à partir de `.env.example`.
 | `SMTP_HOST` | | Serveur SMTP sortant |
 | `SMTP_PORT` | | `465` (SSL) ou `587` (STARTTLS) |
 | `SMTP_SECURE` | | `true` pour le port 465 |
-| `SMTP_USER` / `SMTP_PASS` | | Identifiants SMTP |
-| `MAIL_FROM` | | Adresse expéditeur affichée |
+| `SMTP_USER` / `SMTP_PASS` | | Compte de connexion au serveur SMTP (peut être un identifiant technique) |
+| `MAIL_FROM` | | Adresse d'expédition de tous les courriels (`a@b.fr` ou `"Nom" <a@b.fr>`), aussi affichée dans la signature. Sans elle, `SMTP_USER` sert d'expéditeur s'il est une adresse ; sinon aucun courriel ne part |
 | `MAIL_ADMIN` | | Destinataire des alertes |
 | `IDFM_API_KEY` | | API Île-de-France Mobilités (recherche d'itinéraires) |
 | `ALLOWED_ORIGIN` | | Origine autorisée pour les en-têtes CORS |
@@ -370,8 +370,14 @@ lus depuis des fichiers `chmod 600` sur le serveur (`/opt/pj-secrets.env`,
 
 ## Sécurité
 
-- **Authentification** : JWT HS256 en cookie `httpOnly` + `secure` + `sameSite`,
-  validité 30 jours (durée actuelle, à valider avec la DSI)
+- **Authentification** : JWT HS256 en cookie `httpOnly` + `secure` + `sameSite`.
+  La session se ferme après **10 minutes sans action** (le jeton n'est prolongé
+  que par une vraie action de l'utilisateur, pas par les rafraîchissements
+  automatiques) et ne dure jamais plus de **24 heures** : reconnexion chaque jour
+- **Mots de passe** : 12 caractères au minimum, dont une majuscule et un
+  caractère spécial (recommandation CNIL)
+- **Information RGPD** des agents affichée sur leur profil et sur leur fiche
+  (contenu tiré du registre, `src/data/rgpd.json`)
 - **Révocation de session** : colonne `session_invalidated_at` vérifiée à chaque
   requête ; la déconnexion et le changement de mot de passe invalident toutes
   les sessions actives

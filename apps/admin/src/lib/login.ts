@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { NextResponse } from 'next/server';
 import pool, { queryOne } from '@/lib/db';
-import { roleEffectif, signJWT, SESSION_COOKIE, SESSION_TTL_SECONDS } from '@/lib/auth';
+import { roleEffectif, signJWT, SESSION_COOKIE, SESSION_INACTIVITE_SECONDS, SESSION_TTL_SECONDS } from '@/lib/auth';
 import { consommerCodeTotp } from '@/lib/totp';
 import { normaliserRubriques } from '@/lib/rubriques';
 import { consommerTentative, reinitialiserTentatives, FENETRE_15_MIN_MS } from '@/lib/rate-limit';
@@ -170,7 +170,7 @@ export interface SessionEmise {
  * révoqués à chaque reconnexion.
  */
 export async function emettreSession(compte: CompteAuthentifie & { tenantId: string }): Promise<SessionEmise> {
-  const expiresAt = new Date((Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS) * 1000);
+  const expiresAt = new Date((Math.floor(Date.now() / 1000) + SESSION_INACTIVITE_SECONDS) * 1000);
   const token = await signJWT({
     id: compte.id,
     username: compte.username,
